@@ -506,6 +506,85 @@ wheels = [
 ]
 
 [[package]]
+name = "chappaai"
+version = "2026.11.0"
+source = { editable = "." }
+dependencies = [
+    { name = "alembic" },
+    { name = "asyncpg" },
+    { name = "cachetools" },
+    { name = "cryptography" },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "jinja2" },
+    { name = "logfire", extra = ["fastapi", "httpx", "sqlalchemy", "system-metrics"] },
+    { name = "opentelemetry-instrumentation-fastapi" },
+    { name = "pgvector" },
+    { name = "pydantic" },
+    { name = "pydantic-ai" },
+    { name = "pydantic-settings" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "sqlmodel" },
+    { name = "tenacity" },
+    { name = "uvicorn" },
+    { name = "voyageai" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "nbstripout" },
+    { name = "notebook" },
+    { name = "pandas" },
+    { name = "poethepoet" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "ruff" },
+    { name = "tqdm" },
+    { name = "whatstk" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "alembic", specifier = ">=1.18.5" },
+    { name = "asyncpg", specifier = ">=0.31.0" },
+    { name = "cachetools", specifier = ">=7.1.4" },
+    { name = "cryptography", specifier = ">=46.0.7" },
+    { name = "fastapi", specifier = ">=0.139.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "jinja2", specifier = ">=3.1.6" },
+    { name = "logfire", extras = ["fastapi", "httpx", "sqlalchemy", "system-metrics"], specifier = ">=4.41.0,<5" },
+    { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.64b0" },
+    { name = "pgvector", specifier = ">=0.5.0" },
+    { name = "pydantic", specifier = ">=2.13.4" },
+    { name = "pydantic-ai", specifier = ">=1.73.0" },
+    { name = "pydantic-settings", specifier = ">=2.13.1" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.51" },
+    { name = "sqlmodel", specifier = ">=0.0.39" },
+    { name = "tenacity", specifier = ">=9.1.4" },
+    { name = "uvicorn", specifier = ">=0.50.2" },
+    { name = "voyageai", specifier = ">=0.4.1" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "nbstripout", specifier = ">=0.9.1" },
+    { name = "notebook", specifier = ">=7.6.0" },
+    { name = "pandas", specifier = ">=2.3.3" },
+    { name = "poethepoet", specifier = ">=0.48.0" },
+    { name = "pyright", specifier = ">=1.1.411" },
+    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest-asyncio", specifier = ">=1.4.0" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-httpx", specifier = ">=0.36.2" },
+    { name = "ruff", specifier = ">=0.15.20" },
+    { name = "tqdm", specifier = ">=4.68.3" },
+    { name = "whatstk", specifier = ">=0.8.1" },
+]
+
+[[package]]
 name = "charset-normalizer"
 version = "3.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -4494,85 +4573,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b1/b0/c8a15933564cb4da629ab8b46ba742b4395c116bf8a5ae7b0cbef176e8f9/voyageai-0.4.1.tar.gz", hash = "sha256:1e59d9fb22f79abdeef6946000fb4789ac10d9453b9997574f8408e619999b4c", size = 27526, upload-time = "2026-06-18T21:06:49.868Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ad/c4/39c395883d097a0f073f0e10f30b81b4b478abf1e43615639fb84e7d5785/voyageai-0.4.1-py3-none-any.whl", hash = "sha256:68b4305d9598db7bfec00efa49915a405c9859070ddee3ef59e880090260baa4", size = 35975, upload-time = "2026-06-18T21:06:48.764Z" },
-]
-
-[[package]]
-name = "wa-llm"
-version = "1.4.10"
-source = { editable = "." }
-dependencies = [
-    { name = "alembic" },
-    { name = "asyncpg" },
-    { name = "cachetools" },
-    { name = "cryptography" },
-    { name = "fastapi" },
-    { name = "httpx" },
-    { name = "jinja2" },
-    { name = "logfire", extra = ["fastapi", "httpx", "sqlalchemy", "system-metrics"] },
-    { name = "opentelemetry-instrumentation-fastapi" },
-    { name = "pgvector" },
-    { name = "pydantic" },
-    { name = "pydantic-ai" },
-    { name = "pydantic-settings" },
-    { name = "sqlalchemy", extra = ["asyncio"] },
-    { name = "sqlmodel" },
-    { name = "tenacity" },
-    { name = "uvicorn" },
-    { name = "voyageai" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "nbstripout" },
-    { name = "notebook" },
-    { name = "pandas" },
-    { name = "poethepoet" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-httpx" },
-    { name = "ruff" },
-    { name = "tqdm" },
-    { name = "whatstk" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "alembic", specifier = ">=1.18.5" },
-    { name = "asyncpg", specifier = ">=0.31.0" },
-    { name = "cachetools", specifier = ">=7.1.4" },
-    { name = "cryptography", specifier = ">=46.0.7" },
-    { name = "fastapi", specifier = ">=0.139.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "jinja2", specifier = ">=3.1.6" },
-    { name = "logfire", extras = ["fastapi", "httpx", "sqlalchemy", "system-metrics"], specifier = ">=4.41.0,<5" },
-    { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.64b0" },
-    { name = "pgvector", specifier = ">=0.5.0" },
-    { name = "pydantic", specifier = ">=2.13.4" },
-    { name = "pydantic-ai", specifier = ">=1.73.0" },
-    { name = "pydantic-settings", specifier = ">=2.13.1" },
-    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.51" },
-    { name = "sqlmodel", specifier = ">=0.0.39" },
-    { name = "tenacity", specifier = ">=9.1.4" },
-    { name = "uvicorn", specifier = ">=0.50.2" },
-    { name = "voyageai", specifier = ">=0.4.1" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "nbstripout", specifier = ">=0.9.1" },
-    { name = "notebook", specifier = ">=7.6.0" },
-    { name = "pandas", specifier = ">=2.3.3" },
-    { name = "poethepoet", specifier = ">=0.48.0" },
-    { name = "pyright", specifier = ">=1.1.411" },
-    { name = "pytest", specifier = ">=9.1.1" },
-    { name = "pytest-asyncio", specifier = ">=1.4.0" },
-    { name = "pytest-cov", specifier = ">=7.1.0" },
-    { name = "pytest-httpx", specifier = ">=0.36.2" },
-    { name = "ruff", specifier = ">=0.15.20" },
-    { name = "tqdm", specifier = ">=4.68.3" },
-    { name = "whatstk", specifier = ">=0.8.1" },
 ]
 
 [[package]]
