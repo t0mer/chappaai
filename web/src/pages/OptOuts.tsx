@@ -129,7 +129,7 @@ export default function OptOuts() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Opt-outs" description="Messages from people on this list are stored but excluded from processing." />
+      <PageHeader title="Opt-outs" description="People on this list will be left out of trip indexing and AI features." />
       <form aria-label="Add opt-out" className="flex flex-col gap-2" onSubmit={add}>
         {/* The hint sits below the row, so the button lines up with the input itself (sm:items-end). */}
         <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-end">
@@ -146,7 +146,7 @@ export default function OptOuts() {
           <LoadingRows desktop={desktop} />
         ) : data && items.length === 0 ? (
           <div className="rounded-lg border bg-surface">
-            <EmptyState icon={BellRing} title="Nobody has opted out.">Messages from contacts you add here are excluded from processing.</EmptyState>
+            <EmptyState icon={BellRing} title="Nobody has opted out.">Contacts you add here will be left out of trip indexing and AI features.</EmptyState>
           </div>
         ) : !data ? null : desktop ? (
           <div className="overflow-x-auto rounded-lg border bg-surface">

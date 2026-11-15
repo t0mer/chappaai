@@ -171,7 +171,7 @@ export default function Groups() {
     if (!group.managed) {
       const ok = await confirm({
         title: `Enable "${label(group)}"?`,
-        text: "New messages from this group will be stored and processed.",
+        text: "The group will be tracked. Trip features for tracked groups are coming in the next release.",
         confirmText: "Enable",
       });
       if (!ok) return;
