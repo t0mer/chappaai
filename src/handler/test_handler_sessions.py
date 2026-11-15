@@ -1,13 +1,11 @@
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy import text
 from sqlmodel import select
 
-from config import Settings
 from handler import MessageHandler
-from handler.kb_qa import KBQAHandler
 from models import Group, Message, Reaction, Sender
 from test_utils.openwa_session import OTHER_SESSION_ID, TEST_SESSION_ID
 from whatsapp import InboundMessage, InboundReaction
@@ -21,14 +19,9 @@ USER = "972501@s.whatsapp.net"
 
 def whatsapp() -> AsyncMock:
     client = AsyncMock()
-    client.send_text = AsyncMock(return_value="reply-id")
     client.get_my_jid = AsyncMock(return_value=JID(user="bot", server="s.whatsapp.net"))
     client.get_my_lid = AsyncMock(return_value=None)
     return client
-
-
-def settings() -> Mock:
-    return Mock(spec=Settings, dm_autoreply_enabled=False, qa_test_groups=[])
 
 
 def inbound(text: str, chat: str, msg_id: str = "m1") -> InboundMessage:
@@ -50,7 +43,7 @@ async def seed_group(db_sessionmaker, jid: str, owner: str) -> None:
 
 async def handle(db_sessionmaker, session_id: str, event, wa: AsyncMock) -> None:
     async with db_sessionmaker() as session:
-        handler = MessageHandler(session, wa, AsyncMock(), settings(), session_id)
+        handler = MessageHandler(session, wa, AsyncMock(), session_id)
         await handler(event)
 
 
@@ -68,7 +61,7 @@ async def test_message_in_group_owned_by_another_session_is_ignored(
     await handle(db_sessionmaker, OTHER_SESSION_ID, inbound("@bot hi", "a@g.us"), wa)
 
     assert await messages(db_sessionmaker) == []
-    wa.send_text.assert_not_awaited()
+    assert wa.mock_calls == []
 
 
 async def test_message_in_own_group_is_stored(db_sessionmaker):
@@ -139,49 +132,6 @@ async def test_message_upsert_keeps_the_original_session(db_sessionmaker):
     assert stored.session_id == TEST_SESSION_ID
 
 
-@pytest.mark.parametrize(
-    ("asker", "found"), [(TEST_SESSION_ID, True), (OTHER_SESSION_ID, False)]
-)
-async def test_kb_qa_resolves_only_groups_of_its_own_session(
-    db_sessionmaker, asker, found
-):
-    async with db_sessionmaker() as session:
-        session.add(
-            Group(
-                group_jid="a@g.us",
-                group_name="Alpha",
-                session_id=TEST_SESSION_ID,
-                managed=True,
-            )
-        )
-        await session.commit()
-    qa_settings = Mock(
-        spec=Settings, qa_test_groups={"qa@g.us"}, qa_testers={USER}, model_name="m"
-    )
-    wa = whatsapp()
-    message = Message(
-        session_id=asker,
-        message_id="q1",
-        text="/kb_qa group: Alpha, question: what?",
-        chat_jid="qa@g.us",
-        group_jid="qa@g.us",
-        sender_jid=USER,
-    )
-    async with db_sessionmaker() as session:
-        handler = KBQAHandler(session, wa, AsyncMock(), qa_settings, asker)
-        ask = handler.ask_knowledge_base = AsyncMock()
-        await handler(message)
-
-    if found:
-        assert ask.await_args is not None
-        (asked,) = ask.await_args.args
-        assert asked.group_jid == "a@g.us"
-    else:
-        ask.assert_not_awaited()
-        assert wa.send_text.await_args is not None
-        assert "No group found matching 'Alpha'" in wa.send_text.await_args.args[1]
-
-
 async def test_group_created_by_another_session_during_the_race_is_not_taken(
     db_sessionmaker, monkeypatch
 ):
@@ -198,7 +148,7 @@ async def test_group_created_by_another_session_during_the_race_is_not_taken(
     await handle(db_sessionmaker, OTHER_SESSION_ID, inbound("@bot hi", "r@g.us"), wa)
 
     assert await messages(db_sessionmaker) == []
-    wa.send_text.assert_not_awaited()
+    assert wa.mock_calls == []
     async with db_sessionmaker() as session:
         group = await session.get(Group, "r@g.us")
         assert group is not None

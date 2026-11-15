@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import json
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import FastAPI
@@ -9,7 +9,6 @@ from fastapi.testclient import TestClient
 
 from api import webhook as webhook_api
 from api.deps import get_db_async_session
-from config import get_settings
 
 SECRET = "s" * 16
 
@@ -45,7 +44,7 @@ def ctx(monkeypatch: pytest.MonkeyPatch):
     webhook_api._in_flight.clear()
     handlers: dict[str, AsyncMock] = {}
 
-    def build(_request, _db, session_pk, _settings):
+    def build(_request, _db, session_pk):
         return handlers.setdefault(session_pk, AsyncMock(name=f"h-{session_pk}"))
 
     monkeypatch.setattr(webhook_api, "build_handler", build)
@@ -56,7 +55,6 @@ def ctx(monkeypatch: pytest.MonkeyPatch):
     app.state.registry = StubRegistry(["a", "b"])
     db = AsyncMock()
     app.dependency_overrides[get_db_async_session] = lambda: db
-    app.dependency_overrides[get_settings] = lambda: Mock()
     return TestClient(app), handlers, gather, db
 
 

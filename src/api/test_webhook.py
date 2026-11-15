@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import json
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import FastAPI
@@ -9,7 +9,6 @@ from fastapi.testclient import TestClient
 
 from api import webhook as webhook_api
 from api.deps import get_db_async_session
-from config import get_settings
 from whatsapp import InboundMessage, InboundReaction
 
 SECRET = "s" * 16
@@ -41,7 +40,6 @@ def ctx(monkeypatch: pytest.MonkeyPatch):
     session, whatsapp = AsyncMock(), AsyncMock()
     app.state.registry = StubRegistry(whatsapp)
     app.dependency_overrides[get_db_async_session] = lambda: session
-    app.dependency_overrides[get_settings] = lambda: Mock()
     return TestClient(app), handler, gather, session, whatsapp
 
 

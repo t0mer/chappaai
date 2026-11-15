@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from api.deps import build_handler, get_db_async_session, get_registry
-from config import Settings, get_settings
 from whatsapp import GroupEvent, InboundMessage, InboundReaction
 from whatsapp.init_groups import gather_groups
 from whatsapp.openwa_webhook import parse_event, verify_signature
@@ -45,27 +44,24 @@ async def webhook(
     session_pk: str,
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db_async_session)],
-    settings: Annotated[Settings, Depends(get_settings)],
 ) -> Any:
     """OpenWA webhook for one session. Returns "ok" to acknowledge receipt."""
-    return await _handle(request, session_pk, db, settings)
+    return await _handle(request, session_pk, db)
 
 
 @router.post("/webhook")
 async def legacy_webhook(
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db_async_session)],
-    settings: Annotated[Settings, Depends(get_settings)],
 ) -> Any:
     """Legacy single-session webhook; 404 unless exactly one session is active."""
-    return await _handle(request, None, db, settings)
+    return await _handle(request, None, db)
 
 
 async def _handle(
     request: Request,
     session_pk: str | None,
     db: AsyncSession,
-    settings: Settings,
 ) -> Any:
     body = await _read_body_limited(request)
     registry = get_registry(request)
@@ -104,7 +100,7 @@ async def _handle(
     try:
         event = parse_event(envelope)
         if isinstance(event, (InboundMessage, InboundReaction)):
-            await build_handler(request, db, session_pk, settings)(event)
+            await build_handler(request, db, session_pk)(event)
         elif isinstance(event, GroupEvent):
             # Keep GROUPS table in sync when group-related events happen
             await gather_groups(db, registry.get(session_pk), session_pk)

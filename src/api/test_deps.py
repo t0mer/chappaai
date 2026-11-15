@@ -71,7 +71,7 @@ def test_build_handler_binds_the_sessions_gateway():
     state = SimpleNamespace(registry=FakeRegistry(["a", "b"]), embedding_client="emb")
     request = SimpleNamespace(app=SimpleNamespace(state=state))
     db = Mock()
-    handler = build_handler(request, db, "b", Mock())  # type: ignore[arg-type]
+    handler = build_handler(request, db, "b")  # type: ignore[arg-type]
     assert isinstance(handler, MessageHandler)
     assert (handler.session, handler.whatsapp, handler.embedding_client) == (
         db,
