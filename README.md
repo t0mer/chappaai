@@ -96,7 +96,6 @@ cp .env.example .env
 | `LOG_LEVEL`                    | Log level (`DEBUG`, `INFO`, `ERROR`)                                               | `INFO`                                                       |
 | `ANTHROPIC_API_KEY`            | **Required.** Anthropic API key (a real key, starting with `sk-`)                  | –                                                            |
 | `LOGFIRE_TOKEN`                | **Required.** Logfire monitoring token (a real Logfire token)                      | –                                                            |
-| `MODEL_NAME`                   | LLM model id                                                                       | `anthropic:claude-sonnet-4-6`                                |
 | `ADMIN_PASSWORD`               | Admin UI login password. The admin UI is disabled unless both this and `ADMIN_SESSION_SECRET` are set | –                                          |
 | `ADMIN_SESSION_SECRET`         | Secret (>= 32 random chars) that signs the admin session cookie; generate with `openssl rand -hex 32`. Changing it logs everyone out | – |
 | `ADMIN_COOKIE_SECURE`          | Mark the admin session cookie `Secure`; set to `true` when served over HTTPS       | `false`                                                      |
