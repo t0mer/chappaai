@@ -1,4 +1,4 @@
-import { Loader2, MessagesSquare } from "lucide-react";
+import { Loader2, Plane } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { ApiError } from "../api";
@@ -45,7 +45,7 @@ export default function Login() {
     <main className="grid min-h-dvh place-items-center px-4 py-8">
       <form onSubmit={submit} className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-surface p-6 shadow-overlay">
         <div className="flex flex-col items-center gap-2 text-center">
-          <MessagesSquare aria-hidden="true" className="size-8 text-primary" />
+          <Plane aria-hidden="true" className="size-8 text-primary" />
           <p className="text-sm text-muted-foreground">{APP_NAME}</p>
           <h1 className="text-2xl font-semibold tracking-tight">Admin login</h1>
         </div>

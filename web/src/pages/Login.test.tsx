@@ -27,8 +27,8 @@ describe("Login", () => {
     setup();
     expect(screen.getByRole("button", { name: /log in/i })).toHaveClass("bg-primary");
     expect(screen.getByRole("heading", { name: "Admin login" }).closest("form")).toHaveClass("max-w-sm", "rounded-xl", "border", "bg-surface", "p-6");
-    expect(screen.getByText("WhatsApp Bot Admin")).toBeInTheDocument();
-    expect(document.title).toBe("Log in · WhatsApp Bot Admin");
+    expect(screen.getByText("Chappa'ai")).toBeInTheDocument();
+    expect(document.title).toBe("Log in · Chappa'ai");
   });
 
   it("shows a spinner and disables the button while busy", async () => {

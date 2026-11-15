@@ -172,7 +172,7 @@ describe("skip link and landmarks", () => {
 
   it("shows the brand name", () => {
     setup(375);
-    expect(screen.getByText("WhatsApp Bot Admin")).toBeInTheDocument();
+    expect(screen.getByText("Chappa'ai")).toBeInTheDocument();
   });
 });
 

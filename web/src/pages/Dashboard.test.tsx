@@ -583,7 +583,7 @@ describe("Dashboard structure", () => {
   it("sets the page title and heading", async () => {
     renderAt();
     await loaded();
-    expect(document.title).toBe("Dashboard · WhatsApp Bot Admin");
+    expect(document.title).toBe("Dashboard · Chappa'ai");
     expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeInTheDocument();
   });
 

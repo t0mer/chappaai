@@ -309,7 +309,7 @@ describe("small pieces", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Groups" })).toHaveClass("text-2xl", "font-semibold", "tracking-tight", "md:text-[28px]");
     expect(screen.getByText("Manage groups")).toHaveClass("text-sm", "text-muted-foreground");
     expect(screen.getByRole("button", { name: "Add" })).toBeInTheDocument();
-    expect(document.title).toBe("Groups · WhatsApp Bot Admin");
+    expect(document.title).toBe("Groups · Chappa'ai");
   });
   it("Section is a bordered card with an h2", () => {
     render(
