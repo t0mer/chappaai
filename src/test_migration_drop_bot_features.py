@@ -41,6 +41,43 @@ def _snapshot(uri: str) -> tuple[set[str], set[str], str]:
     return asyncio.run(work())
 
 
+def _restored_details(uri: str) -> dict:
+    """Constraints and indexes of the tables the downgrade recreates."""
+
+    async def work():
+        engine = create_async_engine(uri)
+        async with engine.connect() as conn:
+
+            def inspect_schema(sync_conn):
+                insp = inspect(sync_conn)
+                return {
+                    table: {
+                        "fks": {
+                            (
+                                tuple(fk["constrained_columns"]),
+                                fk["referred_table"],
+                                fk["options"].get("ondelete"),
+                            )
+                            for fk in insp.get_foreign_keys(table)
+                        },
+                        "indexes": {i["name"] for i in insp.get_indexes(table)},
+                        "checks": {
+                            c["name"] for c in insp.get_check_constraints(table)
+                        },
+                        "pk": tuple(
+                            insp.get_pk_constraint(table)["constrained_columns"]
+                        ),
+                    }
+                    for table in TABLES
+                }
+
+            result = await conn.run_sync(inspect_schema)
+        await engine.dispose()
+        return result
+
+    return asyncio.run(work())
+
+
 def _seed_group(uri: str) -> None:
     async def work():
         engine = create_async_engine(uri)
@@ -79,6 +116,28 @@ def test_drop_bot_features_upgrade_downgrade_upgrade(fresh_db_uri):
     command.downgrade(config, PREV)
     tables, columns, version = _snapshot(fresh_db_uri)
     assert version == PREV and TABLES <= tables and GROUP_COLUMNS <= columns
+    details = _restored_details(fresh_db_uri)
+    schedule = details["group_summary_schedule"]
+    assert schedule["fks"] == {(("group_jid",), "group", "CASCADE")}
+    assert "ix_group_summary_schedule_group_jid" in schedule["indexes"]
+    assert schedule["checks"] == {
+        "ck_group_summary_schedule_hour",
+        "ck_group_summary_schedule_minute",
+        "ck_group_summary_schedule_weekdays_not_empty",
+        "ck_group_summary_schedule_weekdays_range",
+    }
+    assert details["kbtopic"]["fks"] == {(("group_jid",), "group", None)}
+    assert "kb_topic_embedding_idx" in details["kbtopic"]["indexes"]
+    link = details["kb_topic_message"]
+    assert link["pk"] == ("kb_topic_id", "message_id")
+    assert link["fks"] == {
+        (("kb_topic_id",), "kbtopic", None),
+        (("message_id",), "message", None),
+    }
+    assert {
+        "ix_kb_topic_message_kb_topic_id",
+        "ix_kb_topic_message_message_id",
+    } <= link["indexes"]
 
     command.upgrade(config, "head")
     tables, columns, version = _snapshot(fresh_db_uri)

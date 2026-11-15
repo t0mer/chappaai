@@ -12,7 +12,6 @@ pytestmark = pytest.mark.usefixtures("session_row")
 
 
 async def test_sync_keeps_admin_owned_columns(db_sessionmaker):
-
     async with db_sessionmaker() as session:
         session.add(Sender(jid="972501234567@s.whatsapp.net"))
         session.add(
