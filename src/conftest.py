@@ -11,8 +11,6 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 import models  # noqa: F401  (register tables)
 from models import (
     Group,
-    GroupSummarySchedule,
-    KBTopic,
     Message,
     OpenWAConnection,
     OpenWASession,
@@ -20,7 +18,6 @@ from models import (
     Reaction,
     Sender,
 )
-from models.kb_topic_message import KBTopicMessage
 from test_utils.openwa_session import OTHER_SESSION_ID, seed_session
 
 TABLES = [
@@ -33,9 +30,6 @@ TABLES = [
         Message,
         Reaction,
         OptOut,
-        GroupSummarySchedule,
-        KBTopic,
-        KBTopicMessage,
     )
 ]
 

@@ -8,7 +8,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 # fresh_db_uri is a fixture: importing it registers it here (hence F401/F811)
-from test_migration_schedule import _config, fresh_db_uri  # noqa: F401
+from test_migrations import _config, fresh_db_uri  # noqa: F401
 
 REV = "f6a7b8c9d0e1"
 PREV = "e5f6a7b8c9d0"

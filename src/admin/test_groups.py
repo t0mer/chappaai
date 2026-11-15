@@ -21,10 +21,7 @@ def make_group(**kw: Any) -> Group:
         group_topic="topic",
         display_name=None,
         managed=False,
-        notify_on_spam=False,
         community_keys=None,
-        last_ingest=NOW.replace(tzinfo=None),
-        last_summary_sync=NOW.replace(tzinfo=None),
         created_at=NOW,
     )
     base.update(kw)
@@ -53,21 +50,20 @@ def _result(rows=None, scalar=None):
 def test_list_groups_maps_rows_and_total(ctx):
     client, session = ctx
     g = make_group(community_keys=["a"], display_name="Alias")
-    session.execute.side_effect = [_result(rows=[(g, 7, 3)]), _result(scalar=1)]
+    session.execute.side_effect = [_result(rows=[(g, 7)]), _result(scalar=1)]
     body = client.get("/groups?search=wa&managed=false&sort=-message_count").json()
     assert body["total"] == 1
     item = body["items"][0]
     assert item["group_jid"] == "1203@g.us"
     assert item["group_name"] == "WA name" and item["display_name"] == "Alias"
     assert item["community_keys"] == ["a"] and item["message_count"] == 7
-    assert item["schedule_count"] == 3
-    assert item["managed"] is False and item["notify_on_spam"] is False
+    assert item["managed"] is False
 
 
 def test_list_groups_none_keys_become_empty_list(ctx):
     client, session = ctx
     session.execute.side_effect = [
-        _result(rows=[(make_group(), 0, 0)]),
+        _result(rows=[(make_group(), 0)]),
         _result(scalar=1),
     ]
     assert client.get("/groups").json()["items"][0]["community_keys"] == []
@@ -98,15 +94,12 @@ def test_get_group_404(ctx):
 
 def test_patch_changes_only_sent_fields(ctx):
     client, session = ctx
-    group = make_group(
-        managed=False, notify_on_spam=True, community_keys=["x"], display_name="Keep"
-    )
+    group = make_group(managed=False, community_keys=["x"], display_name="Keep")
     session.get.return_value = group
     session.execute.return_value = _result(scalar=3)
     resp = client.patch("/groups/1203@g.us", json={"managed": True})
     assert resp.status_code == 200
     assert group.managed is True
-    assert group.notify_on_spam is True
     assert group.community_keys == ["x"]
     assert group.display_name == "Keep"
     assert resp.json()["message_count"] == 3
@@ -147,10 +140,6 @@ def test_patch_validation_errors(ctx):
     client, session = ctx
     session.get.return_value = make_group()
     assert client.patch("/groups/1203@g.us", json={"managed": None}).status_code == 422
-    assert (
-        client.patch("/groups/1203@g.us", json={"notify_on_spam": None}).status_code
-        == 422
-    )
     assert (
         client.patch(
             "/groups/1203@g.us", json={"community_keys": [f"k{i}" for i in range(51)]}

@@ -1,3 +1,5 @@
+"""Shared helpers for migration tests: a throwaway Postgres DB per test."""
+
 import asyncio
 import os
 import sys
@@ -5,15 +7,12 @@ import uuid
 from pathlib import Path
 
 import pytest
-from alembic import command
 from alembic.config import Config
-from sqlalchemy import inspect, text
+from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import create_async_engine
 
 ROOT = Path(__file__).resolve().parents[1]
-HEAD = "f6a7b8c9d0e1"
-TABLE = "group_summary_schedule"
 
 
 def _admin_uri() -> str:
@@ -67,52 +66,3 @@ def _config(uri: str) -> Config:
     config.set_main_option("script_location", str(ROOT / "migrations"))
     config.set_main_option("sqlalchemy.url", uri.replace("%", "%%"))
     return config
-
-
-def test_schedule_migration_upgrade_downgrade_upgrade(fresh_db_uri):
-    config = _config(fresh_db_uri)
-    command.upgrade(config, "head")
-
-    async def snapshot():
-        engine = create_async_engine(fresh_db_uri)
-        async with engine.connect() as conn:
-
-            def work(sync_conn):
-                insp = inspect(sync_conn)
-                if not insp.has_table(TABLE):
-                    return (False, [], [], set())
-                return (
-                    insp.has_table(TABLE),
-                    insp.get_foreign_keys(TABLE),
-                    insp.get_indexes(TABLE),
-                    {c["name"] for c in insp.get_check_constraints(TABLE)},
-                )
-
-            result = await conn.run_sync(work)
-            version = (
-                await conn.execute(text("SELECT version_num FROM alembic_version"))
-            ).scalar_one()
-        await engine.dispose()
-        return result, version
-
-    (has, fks, idxs, checks), version = asyncio.run(snapshot())
-    assert version == HEAD and has
-    assert len(fks) == 1
-    assert fks[0]["referred_table"] == "group"
-    assert fks[0]["constrained_columns"] == ["group_jid"]
-    assert fks[0]["options"].get("ondelete") == "CASCADE"
-    assert any(i["column_names"] == ["group_jid"] for i in idxs)
-    assert checks == {
-        "ck_group_summary_schedule_hour",
-        "ck_group_summary_schedule_minute",
-        "ck_group_summary_schedule_weekdays_not_empty",
-        "ck_group_summary_schedule_weekdays_range",
-    }
-
-    command.downgrade(config, "d4e5f6a7b8c9")
-    (has, *_), version = asyncio.run(snapshot())
-    assert not has and version == "d4e5f6a7b8c9"
-
-    command.upgrade(config, "head")
-    (has, *_), version = asyncio.run(snapshot())
-    assert has and version == HEAD

@@ -83,7 +83,7 @@ def client(real_app):
     session.connection = AsyncMock(return_value=conn)
     real_app.dependency_overrides[get_whatsapp] = lambda: whatsapp
     real_app.dependency_overrides[get_db_async_session] = lambda: session
-    # no context manager: skip the lifespan (DB, WhatsApp, scheduler)
+    # no context manager: skip the lifespan (DB, WhatsApp)
     yield TestClient(real_app, raise_server_exceptions=False)
     real_app.dependency_overrides.clear()
 

@@ -8,7 +8,7 @@ from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from api.deps import get_db_async_session, get_session_id
-from models import Group, GroupSummarySchedule, Message
+from models import Group, Message
 from whatsapp.jid import normalize_jid
 
 from .schemas import MAX_OFFSET, GroupOut, GroupPatch, Page, clean_keys, clean_text
@@ -18,8 +18,6 @@ router = APIRouter(tags=["admin-groups"])
 SortKey = Literal[
     "name",
     "-name",
-    "last_summary_sync",
-    "-last_summary_sync",
     "message_count",
     "-message_count",
     "created_at",
@@ -56,7 +54,6 @@ def _order_by(sort: str, message_count):
         "name": func.lower(
             func.coalesce(Group.display_name, Group.group_name, Group.group_jid)
         ),
-        "last_summary_sync": col(Group.last_summary_sync),
         "message_count": message_count,
         "created_at": col(Group.created_at),
     }
@@ -67,15 +64,6 @@ def _order_by(sort: str, message_count):
 async def _message_count(session: AsyncSession, group_jid: str) -> int:
     result = await session.execute(
         select(func.count()).select_from(Message).where(Message.group_jid == group_jid)
-    )
-    return int(result.scalar_one())
-
-
-async def _schedule_count(session: AsyncSession, group_jid: str) -> int:
-    result = await session.execute(
-        select(func.count())
-        .select_from(GroupSummarySchedule)
-        .where(GroupSummarySchedule.group_jid == group_jid)
     )
     return int(result.scalar_one())
 
@@ -97,23 +85,9 @@ async def list_groups(
         .subquery()
     )
     message_count = func.coalesce(counts.c.n, 0)
-    schedule_counts = (
-        select(
-            col(GroupSummarySchedule.group_jid).label("group_jid"),
-            func.count().label("n"),
-        )
-        .group_by(col(GroupSummarySchedule.group_jid))
-        .subquery()
-    )
-    schedule_count = func.coalesce(schedule_counts.c.n, 0)
     rows_stmt = (
-        select(
-            Group,
-            message_count.label("message_count"),
-            schedule_count.label("schedule_count"),
-        )
+        select(Group, message_count.label("message_count"))
         .outerjoin(counts, counts.c.group_jid == Group.group_jid)
-        .outerjoin(schedule_counts, schedule_counts.c.group_jid == Group.group_jid)
         .where(col(Group.session_id) == session_id, *group_filters(search, managed))
         .order_by(*_order_by(sort, message_count))
         .limit(limit)
@@ -127,9 +101,7 @@ async def list_groups(
     )
     total = (await session.execute(total_stmt)).scalar_one()
     return Page(
-        items=[
-            GroupOut.from_group(group, count, sched) for group, count, sched in rows
-        ],
+        items=[GroupOut.from_group(group, count) for group, count in rows],
         total=int(total),
     )
 
@@ -143,11 +115,7 @@ async def get_group(
     group = await session.get(Group, jid)
     if group is None:
         raise HTTPException(status_code=404, detail="group not found")
-    return GroupOut.from_group(
-        group,
-        await _message_count(session, jid),
-        await _schedule_count(session, jid),
-    )
+    return GroupOut.from_group(group, await _message_count(session, jid))
 
 
 @router.patch("/{group_jid}", response_model=GroupOut)
@@ -163,18 +131,10 @@ async def patch_group(
     sent = patch.model_fields_set
     if "managed" in sent:
         group.managed = bool(patch.managed)
-    if "notify_on_spam" in sent:
-        group.notify_on_spam = bool(patch.notify_on_spam)
     if "community_keys" in sent:
         group.community_keys = clean_keys(patch.community_keys)
     if "display_name" in sent:
         group.display_name = clean_text(patch.display_name)
-    if "summary_language" in sent:
-        group.summary_language = patch.summary_language
     session.add(group)
     await session.flush()
-    return GroupOut.from_group(
-        group,
-        await _message_count(session, jid),
-        await _schedule_count(session, jid),
-    )
+    return GroupOut.from_group(group, await _message_count(session, jid))

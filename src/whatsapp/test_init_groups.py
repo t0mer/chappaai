@@ -28,19 +28,14 @@ async def test_gather_groups_updates_only_gateway_owned_columns():
     assert '"group".session_id = %(session_id_1)s' in where_part
     assert "ON CONFLICT (group_jid)" in insert_part
     assert "display_name" in insert_part  # new rows still insert every column
-    assert "summary_language" in insert_part
     assert stmt.compile(dialect=postgresql.dialect()).params["session_id"] == "s1"
     assert "group_name = excluded.group_name" in set_part
     assert "group_topic = excluded.group_topic" in set_part
     assert "owner_jid = excluded.owner_jid" in set_part
     for column in (
         "display_name",
-        "summary_language",
         "managed",
-        "notify_on_spam",
         "community_keys",
-        "last_ingest",
-        "last_summary_sync",
         "created_at",
         "session_id",
     ):

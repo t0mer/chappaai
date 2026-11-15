@@ -10,11 +10,9 @@ import logfire
 
 from admin import admin_router, spa_router
 from admin.auth import admin_config_warning
-from admin.actions import runner as admin_actions
-from api import load_new_kbtopics_api, status, summarize_and_send_to_group_api, webhook
+from api import status, webhook
 import models  # noqa
 from config import get_settings
-from scheduling.runner import start_scheduler
 from openwa_settings.crypto import SecretBox
 from openwa_settings.registry import GatewayRegistry
 from openwa_settings.store import load_connection, seed_from_env, webhook_url_for
@@ -142,12 +140,9 @@ async def lifespan(app: FastAPI):
     app.state.embedding_client = AsyncClient(
         api_key=settings.voyage_api_key, max_retries=settings.voyage_max_retries
     )
-    if (scheduler_task := start_scheduler(app)) is not None:
-        app.state.bg_tasks.append(scheduler_task)
     try:
         yield
     finally:
-        await admin_actions.shutdown()
         for task in app.state.bg_tasks:
             task.cancel()
         await asyncio.gather(*app.state.bg_tasks, return_exceptions=True)
@@ -167,8 +162,6 @@ logfire.instrument_system_metrics()
 
 app.include_router(webhook.router)
 app.include_router(status.router)
-app.include_router(summarize_and_send_to_group_api.router)
-app.include_router(load_new_kbtopics_api.router)
 app.include_router(admin_router)
 app.include_router(spa_router)
 

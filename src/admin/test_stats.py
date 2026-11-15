@@ -48,7 +48,6 @@ def test_stats_out_serializes_from_under_its_alias():
             "messages": 0,
             "active_senders": 0,
             "reactions": 0,
-            "kb_topics": 0,
             "split": {"text": 0, "media": 0, "other": 0},
             "series": [{"start": T0, "count": 0}],
             "top_groups": [{"group_jid": "1@g.us", "name": None, "count": 1}],
