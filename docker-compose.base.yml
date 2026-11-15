@@ -1,0 +1,42 @@
+# docker-compose.base.yml
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: webhook_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - wa_llm_postgres:/var/lib/postgresql/data
+    command: ["postgres", "-c", "log_statement=all"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d webhook_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  whatsapp:
+    image: ghcr.io/rmyndharis/openwa:0.24.0
+    container_name: whatsapp
+    ports:
+      - "2785:2785"
+    restart: always
+    volumes:
+      - wa_llm_openwa:/app/data
+    environment:
+      - ENGINE_TYPE=whatsapp-web.js
+      # The OpenWA server's own master key. The app does not read OPENWA_API_KEY at runtime:
+      # it imports it once on first start (when no connection is stored yet); after that,
+      # enter the same key in Admin > Settings > Connection.
+      - API_MASTER_KEY=${OPENWA_API_KEY:?set OPENWA_API_KEY in .env}
+      - SSRF_ALLOWED_HOSTS=web-server
+      - RESOLVE_LID_TO_PHONE=true
+
+volumes:
+  wa_llm_openwa:
+    name: wa_llm_openwa
+  wa_llm_postgres:
+    name: wa_llm_postgres

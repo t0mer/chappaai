@@ -1,0 +1,40 @@
+from pathlib import Path
+
+from alembic.config import Config
+from alembic.script import ScriptDirectory
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_alembic_has_a_single_head_that_includes_display_name_migration():
+    config = Config(str(ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(ROOT / "migrations"))
+    script = ScriptDirectory.from_config(config)
+    assert len(script.get_heads()) == 1
+    revisions = {rev.revision for rev in script.walk_revisions()}
+    assert "c3d4e5f6a7b8" in revisions
+
+
+def test_summary_language_migration_follows_display_name():
+    config = Config(str(ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(ROOT / "migrations"))
+    script = ScriptDirectory.from_config(config)
+    revision = script.get_revision("d4e5f6a7b8c9")
+    assert revision is not None and revision.down_revision == "c3d4e5f6a7b8"
+
+
+def test_schedule_migration_follows_summary_language():
+    config = Config(str(ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(ROOT / "migrations"))
+    script = ScriptDirectory.from_config(config)
+    revision = script.get_revision("e5f6a7b8c9d0")
+    assert revision is not None and revision.down_revision == "d4e5f6a7b8c9"
+
+
+def test_openwa_migration_follows_schedule_and_is_head():
+    config = Config(str(ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(ROOT / "migrations"))
+    script = ScriptDirectory.from_config(config)
+    assert script.get_heads() == ["f6a7b8c9d0e1"]
+    revision = script.get_revision("f6a7b8c9d0e1")
+    assert revision is not None and revision.down_revision == "e5f6a7b8c9d0"

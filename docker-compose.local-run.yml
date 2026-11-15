@@ -1,0 +1,18 @@
+services:
+  postgres:
+    extends:
+      file: docker-compose.base.yml
+      service: postgres
+
+  whatsapp:
+    extends:
+      file: docker-compose.base.yml
+      service: whatsapp
+    environment:
+      - SSRF_ALLOWED_HOSTS=host.docker.internal
+
+volumes:
+  wa_llm_openwa:
+    name: wa_llm_openwa
+  wa_llm_postgres:
+    name: wa_llm_postgres
