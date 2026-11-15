@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import re
 import time
-from collections.abc import Sequence
 from typing import Any, Callable
 from urllib.parse import quote
 
@@ -16,7 +15,6 @@ from .jid import (
     JID,
     parse_jid,
     to_canonical_jid,
-    to_openwa_chat_id,
 )
 from .types import GroupInfo, SessionStatus
 
@@ -24,9 +22,6 @@ logger = logging.getLogger(__name__)
 
 # How long a failed bot-LID lookup is remembered before OpenWA is asked again.
 LID_FAILURE_TTL_SECONDS = 300.0
-
-# OpenWA's SendTextMessageDto limit for `mentions`.
-MAX_MENTIONS = 1024
 
 
 def _unwrap(data: Any) -> Any:
@@ -117,30 +112,6 @@ class OpenWAGateway:
                 f"OpenWA {method} {path} returned a non-JSON response: "
                 f"{resp.text[:200]!r}"
             ) from e
-
-    async def send_text(
-        self,
-        jid: str,
-        text: str,
-        reply_to: str | None = None,
-        mentions: Sequence[str] = (),
-    ) -> str:
-        body: dict[str, Any] = {"chatId": to_openwa_chat_id(jid), "text": text}
-        if reply_to:
-            body["quotedMessageId"] = reply_to
-        if mentions:
-            # dict.fromkeys dedupes while keeping order.
-            wids = dict.fromkeys(to_openwa_chat_id(j) for j in mentions)
-            body["mentions"] = list(wids)[:MAX_MENTIONS]
-        data = _unwrap(
-            await self._request(
-                "POST", f"{self._session_path}/messages/send-text", json=body
-            )
-        )
-        message_id = data.get("messageId") if isinstance(data, dict) else None
-        if not message_id:
-            raise GatewayError("OpenWA send-text response had no messageId")
-        return str(message_id)
 
     async def get_status(self) -> SessionStatus:
         data = _unwrap(await self._request("GET", self._session_path))
