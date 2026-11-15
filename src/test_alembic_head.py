@@ -31,10 +31,18 @@ def test_schedule_migration_follows_summary_language():
     assert revision is not None and revision.down_revision == "d4e5f6a7b8c9"
 
 
-def test_openwa_migration_follows_schedule_and_is_head():
+def test_openwa_migration_follows_schedule():
     config = Config(str(ROOT / "alembic.ini"))
     config.set_main_option("script_location", str(ROOT / "migrations"))
     script = ScriptDirectory.from_config(config)
-    assert script.get_heads() == ["f6a7b8c9d0e1"]
     revision = script.get_revision("f6a7b8c9d0e1")
     assert revision is not None and revision.down_revision == "e5f6a7b8c9d0"
+
+
+def test_drop_bot_features_follows_openwa_and_is_head():
+    config = Config(str(ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(ROOT / "migrations"))
+    script = ScriptDirectory.from_config(config)
+    assert script.get_heads() == ["b0328428962c"]
+    revision = script.get_revision("b0328428962c")
+    assert revision is not None and revision.down_revision == "f6a7b8c9d0e1"
