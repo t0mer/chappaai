@@ -2,19 +2,11 @@
 // the <body> children. Closing a Radix dialog in between must not leave the app hidden.
 import Swal from "sweetalert2";
 import { useState } from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SchedulesDialog from "./components/SchedulesDialog";
 import { Dialog, DialogContent } from "./components/ui/dialog";
 import { confirm } from "./alerts";
-import { api } from "./api";
-import type { Schedule } from "./types";
-
-vi.mock("./api", async (orig) => {
-  const actual = await orig<typeof import("./api")>();
-  return { ...actual, api: { listSchedules: vi.fn(), deleteSchedule: vi.fn(), patchSchedule: vi.fn(), createSchedule: vi.fn() } };
-});
 
 window.matchMedia ??= ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} })) as never;
 window.scrollTo = (() => {}) as never;
@@ -24,10 +16,6 @@ const user = userEvent.setup({ pointerEventsCheck: 0 });
 /** The Radix dialog (SweetAlert popups also have role=dialog). */
 const radixDialog = () => document.querySelector("[role=dialog]:not(.swal2-popup)");
 const popup = () => document.querySelector<HTMLElement>(".swal2-container .swal2-popup:not(.swal2-toast)");
-const sched: Schedule = {
-  id: "s1", weekdays: [1], hour: 9, minute: 30, hour12: 9, meridiem: "AM", enabled: true,
-  last_run_at: null, last_status: null, last_reason: null, last_message_count: null,
-};
 
 /**
  * jsdom has no CSS animations, so SweetAlert would tear down synchronously. Report an animation on
@@ -61,7 +49,6 @@ function expectExposed(el: Element) {
 let spy: ReturnType<typeof simulateSwalAnimation>;
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(api.listSchedules).mockResolvedValue({ timezone: "UTC", items: [sched] });
   spy = simulateSwalAnimation();
 });
 afterEach(async () => {
@@ -86,20 +73,25 @@ describe("SweetAlert + Radix aria-hidden bookkeeping", () => {
     expect(document.querySelector(".swal2-container")).toBeNull();
   });
 
-  it("Schedules: Close -> Discard -> the dialog closes and the app is not left aria-hidden", async () => {
+  it("Close -> confirm Discard -> the dialog closes and the app is not left aria-hidden", async () => {
     function Harness() {
       const [open, setOpen] = useState(true);
+      async function close() {
+        if (await confirm({ title: "Discard changes?", confirmText: "Discard", danger: true })) setOpen(false);
+      }
       return (
         <main>
           <h1>App</h1>
-          {open && <SchedulesDialog group={{ group_jid: "1@g.us", label: "Friends", managed: true }} onClose={() => setOpen(false)} onChanged={() => {}} />}
+          <Dialog open={open}>
+            <DialogContent title="Edit">
+              <button type="button" onClick={() => void close()}>Discard and close</button>
+            </DialogContent>
+          </Dialog>
         </main>
       );
     }
     const { container } = render(<Harness />);
-    const row = await screen.findByRole("group", { name: "Schedule at 9:30 AM" });
-    await user.click(within(row).getByRole("switch", { name: "Enabled" }));
-    await user.click(screen.getAllByRole("button", { name: "Close" })[1]);
+    await user.click(await screen.findByRole("button", { name: "Discard and close" }));
     await waitFor(() => expect(popup()).not.toBeNull());
     const p = popup()!;
     await user.click(p.querySelector<HTMLElement>(".swal2-confirm")!);

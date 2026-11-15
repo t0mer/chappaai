@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth";
 import { Notice } from "./components/layout/Notice";
 import AppShell from "./components/layout/AppShell";
-import Actions from "./pages/Actions";
 import Contacts from "./pages/Contacts";
 import Dashboard from "./pages/Dashboard";
 import Groups from "./pages/Groups";
@@ -32,7 +31,6 @@ export default function App() {
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/opt-outs" element={<OptOuts />} />
           <Route path="/messages" element={<SessionScoped><Messages /></SessionScoped>} />
-          <Route path="/actions" element={<Actions />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

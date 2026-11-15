@@ -78,9 +78,8 @@ describe("SweetAlert2 theme", () => {
     expect(code).not.toMatch(/\btitle:\s+(?!string\b|"swal-title")/); // only typed params and the CSS class name
     expect(code).not.toMatch(/\bfooter:/);
     expect(code).toMatch(/titleText: title/);
-    // the single html option is a DOM node built with textContent
-    expect(code.match(/\bhtml:/g)).toEqual(["html:"]);
-    expect(code).toContain("html: root");
+    // no popup renders HTML content
+    expect(code).not.toMatch(/\bhtml:/);
     expect(code).not.toContain("innerHTML");
   });
 });
