@@ -7,15 +7,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from zoneinfo import available_timezones
 
-from whatsapp.jid import (
-    parse_jid,
-    JIDParseError,
-    DefaultUserServer,
-    LegacyUserServer,
-    GroupServer,
-    to_canonical_jid,
-)
-
 
 class Settings(BaseSettings):
     # API settings
@@ -45,18 +36,6 @@ class Settings(BaseSettings):
     # Model settings
     model_name: str = "anthropic:claude-sonnet-4-6"
 
-    # Direct Message settings
-    dm_autoreply_enabled: bool = False
-    dm_autoreply_message: str = (
-        "Hello, I am not designed to answer to personal messages."
-    )
-
-    # QA tester settings (user JIDs allowed to use /kb_qa command)
-    qa_testers: list[str] = []
-
-    # QA test groups (group JIDs where /kb_qa command is allowed)
-    qa_test_groups: list[str] = []
-
     # Optional settings
     debug: bool = False
     log_level: str = "INFO"
@@ -67,11 +46,8 @@ class Settings(BaseSettings):
     admin_session_secret: str | None = None  # >= 32 chars
     admin_cookie_secure: bool = False
 
-    # Scheduled summaries
-    timezone: str = Field(
-        default="Asia/Jerusalem", validate_default=True
-    )  # IANA zone schedules are evaluated in
-    scheduler_enabled: bool = True
+    # IANA zone the admin dashboard stats are bucketed in
+    timezone: str = Field(default="Asia/Jerusalem", validate_default=True)
 
     @field_validator("timezone", mode="after")
     @classmethod
@@ -84,47 +60,6 @@ class Settings(BaseSettings):
                 f"Invalid TIMEZONE '{v}': expected an IANA name such as "
                 "'Asia/Jerusalem' or 'UTC' (is the tzdata package installed?)"
             )
-        return v
-
-    @field_validator("qa_testers")
-    @classmethod
-    def validate_qa_testers(cls, v: list[str]) -> list[str]:
-        """Validate that qa_testers contains valid user JIDs."""
-        valid_user_servers = (DefaultUserServer, LegacyUserServer)
-        for jid_str in v:
-            try:
-                jid = parse_jid(jid_str)
-            except JIDParseError as e:
-                raise ValueError(f"Invalid JID '{jid_str}': {e}") from e
-
-            if jid.server not in valid_user_servers:
-                raise ValueError(
-                    f"Invalid user JID '{jid_str}'. Expected server to be one of "
-                    f"{valid_user_servers}, got '{jid.server}'"
-                )
-            if not jid.user:
-                raise ValueError(f"Invalid user JID '{jid_str}'. Missing user part.")
-        return [to_canonical_jid(jid_str) for jid_str in v]
-
-    @field_validator("qa_test_groups")
-    @classmethod
-    def validate_qa_test_groups(cls, v: list[str]) -> list[str]:
-        """Validate that qa_test_groups contains valid group JIDs."""
-        for jid_str in v:
-            try:
-                jid = parse_jid(jid_str)
-            except JIDParseError as e:
-                raise ValueError(f"Invalid JID '{jid_str}': {e}") from e
-
-            if not jid.is_group():
-                raise ValueError(
-                    f"Invalid group JID '{jid_str}'. Expected server '{GroupServer}', "
-                    f"got '{jid.server}'"
-                )
-            if not jid.user:
-                raise ValueError(
-                    f"Invalid group JID '{jid_str}'. Missing group ID part."
-                )
         return v
 
     @field_validator("openwa_webhook_secret")
