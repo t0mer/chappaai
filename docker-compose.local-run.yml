@@ -12,7 +12,7 @@ services:
       - SSRF_ALLOWED_HOSTS=host.docker.internal
 
 volumes:
-  wa_llm_openwa:
-    name: wa_llm_openwa
-  wa_llm_postgres:
-    name: wa_llm_postgres
+  chappaai_openwa:
+    name: chappaai_openwa
+  chappaai_postgres:
+    name: chappaai_postgres

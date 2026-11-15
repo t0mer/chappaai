@@ -11,8 +11,8 @@ services:
       service: whatsapp
     restart: always
 
-  web-server:
-    image: techblog/openwa_llm:latest
+  chappaai:
+    image: techblog/chappaai:latest
     env_file:
       - .env.prod
     ports:
@@ -30,11 +30,11 @@ services:
       # Seed values, imported once on first start; afterwards edit them in Admin > Settings.
       # The webhook URL is a base: each session registers {OPENWA_WEBHOOK_URL}/<session id>.
       - WHATSAPP_HOST=http://whatsapp:2785
-      - OPENWA_WEBHOOK_URL=http://web-server:8000/webhook
+      - OPENWA_WEBHOOK_URL=http://chappaai:8000/webhook
     restart: always
 
 volumes:
-  wa_llm_openwa:
-    name: wa_llm_openwa
-  wa_llm_postgres:
-    name: wa_llm_postgres
+  chappaai_openwa:
+    name: chappaai_openwa
+  chappaai_postgres:
+    name: chappaai_postgres

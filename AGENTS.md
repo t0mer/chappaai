@@ -13,7 +13,7 @@
 - Type check: `pyright`.
 - Run tests: `pytest -q` or `pytest --cov=src --cov-report=xml`.
 - Run API locally: `uv run python app/main.py` (reads `.env` in repo root). Alt: `uvicorn app.main:app --reload`.
-- Docker stack: `docker compose up -d` (services: `postgres`, `whatsapp`, `web-server`).
+- Docker stack: `docker compose up -d` (services: `postgres`, `whatsapp`, `chappaai`).
 
 ## Coding Style & Naming Conventions
 - Python style: 4‑space indent, f-strings, type hints for public functions, absolute imports from `src` (e.g., `from handler.router import Router`).
