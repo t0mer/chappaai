@@ -33,7 +33,9 @@ def test_timezone_defaults_to_jerusalem(monkeypatch):
     assert s.timezone == "Asia/Jerusalem"
 
 
-@pytest.mark.parametrize("name", ["UTC", "Europe/London", "Asia/Jerusalem", "EST5EDT"])
+@pytest.mark.parametrize(
+    "name", ["UTC", "Europe/London", "Asia/Jerusalem", "America/New_York"]
+)
 def test_timezone_accepts_listed_iana_names(name):
     assert Settings.model_validate({**REQUIRED, "timezone": name}).timezone == name
 
