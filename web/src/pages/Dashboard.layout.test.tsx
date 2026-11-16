@@ -23,7 +23,6 @@ const STATS: Stats = {
   messages: 10,
   active_senders: 4,
   reactions: 1,
-  kb_topics: 0,
   split: { text: 8, media: 2, other: 0 },
   series: [{ start: "2026-10-14T00:00:00+03:00", count: 10 }],
   top_groups: [{ group_jid: "1@g.us", name: "Alpha", count: 10 }],

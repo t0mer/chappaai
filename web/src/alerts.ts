@@ -1,11 +1,9 @@
 import Swal, { type SweetAlertOptions, type SweetAlertResult } from "sweetalert2";
-import { describeResult } from "./results";
 import { buttonVariants } from "./components/ui/button-variants";
-import type { GroupActionResult } from "./types";
 
 /*
  * SECURITY RULE: SweetAlert2 renders `title`, `html` and `footer` as HTML. Group names, JIDs,
- * push names, error strings and job results are attacker-controllable (any group member can pick
+ * push names and error strings are attacker-controllable (any group member can pick
  * a name like `<img src=x onerror=...>`). Never pass interpolated data through those options.
  * Use `titleText` / `text` (textContent) and build any rich content with DOM nodes + textContent.
  */
@@ -141,51 +139,5 @@ export const toast = {
 export function errorDialog(title: string, message: string): Promise<void> {
   return modal(async () => {
     await fireModal({ ...baseOptions, icon: "error", titleText: title, text: message, confirmButtonText: "Close" });
-  });
-}
-
-/** Icon for a results dialog: success if all sent, error if all failed, info if all skipped, else warning. */
-export function summaryIcon(counts: { sent: number; skipped: number; failed: number }, total: number): "success" | "error" | "info" | "warning" {
-  if (total === 0) return "warning";
-  if (counts.sent === total) return "success";
-  if (counts.failed === total) return "error";
-  if (counts.skipped === total) return "info";
-  return "warning";
-}
-
-/** Show per-group outcome of a summarize run. */
-export function showSummaryResults(results: GroupActionResult[], message?: string | null): Promise<void> {
-  return modal(async () => {
-  const counts = { sent: 0, skipped: 0, failed: 0 };
-  for (const r of results) counts[r.status]++;
-  const root = document.createElement("div");
-  const head = document.createElement("p");
-  head.textContent = results.length
-    ? `${counts.sent} sent, ${counts.skipped} skipped, ${counts.failed} failed.`
-    : message || "No groups were processed.";
-  const list = document.createElement("ul");
-  list.className = "swal-results";
-  for (const r of results) {
-    const li = document.createElement("li");
-    li.className = `swal-result swal-result-${r.status}`;
-    const badge = document.createElement("span");
-    badge.className = `swal-result-badge swal-result-badge-${r.status}`;
-    badge.textContent = r.status;
-    const name = document.createElement("strong");
-    name.textContent = r.group_name;
-    const detail = document.createElement("div");
-    detail.className = "swal-result-detail";
-    detail.textContent = describeResult(r);
-    li.append(badge, " ", name, detail);
-    list.append(li);
-  }
-  root.append(head, list);
-  await fireModal({
-    ...baseOptions,
-    icon: summaryIcon(counts, results.length),
-    titleText: "Summary results",
-    html: root,
-    confirmButtonText: "Close",
-  });
   });
 }

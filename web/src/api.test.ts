@@ -55,12 +55,6 @@ describe("api client", () => {
     await expect(api.addOptOut("x")).rejects.toThrow("bad a; bad b");
   });
 
-  it("maps the load_kb action to the load-kb path", async () => {
-    const fetchMock = mockFetch(202, { job_id: "j" });
-    await api.runAction("load_kb");
-    expect(fetchMock.mock.calls[0][0]).toBe("/api/v1/admin/actions/load-kb");
-  });
-
   it("sends the CSRF header on GET, login and logout", async () => {
     const f = mockFetch(200, { authenticated: true });
     await api.session();

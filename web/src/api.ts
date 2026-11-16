@@ -1,8 +1,8 @@
 import { getSessionId } from "./session";
 import type {
-  ActionName, Actions, ConnectionSettings, ConnectionTestRequest, ConnectionTestResult, ConnectionUpdate,
-  Contact, Group, GroupPatch, GroupSort, MessagePage, OptOutItem, Page, Schedule, ScheduleCreate,
-  ScheduleList, SchedulePatch, SessionCreate, SessionInfo, SessionPatch, Stats,
+  ConnectionSettings, ConnectionTestRequest, ConnectionTestResult, ConnectionUpdate,
+  Contact, Group, GroupPatch, GroupSort, MessagePage, OptOutItem, Page,
+  SessionCreate, SessionInfo, SessionPatch, Stats,
 } from "./types";
 
 const BASE = "/api/v1/admin";
@@ -78,14 +78,6 @@ export const api = {
   patchGroup: (jid: string, patch: GroupPatch) =>
     request<Group>("PATCH", `/groups/${encodeURIComponent(jid)}`, patch),
 
-  listSchedules: (jid: string) =>
-    request<ScheduleList>("GET", `/groups/${encodeURIComponent(jid)}/schedules`),
-  createSchedule: (jid: string, body: ScheduleCreate) =>
-    request<Schedule>("POST", `/groups/${encodeURIComponent(jid)}/schedules`, body),
-  patchSchedule: (jid: string, id: string, patch: SchedulePatch) =>
-    request<Schedule>("PATCH", `/groups/${encodeURIComponent(jid)}/schedules/${encodeURIComponent(id)}`, patch),
-  deleteSchedule: (jid: string, id: string) =>
-    request<void>("DELETE", `/groups/${encodeURIComponent(jid)}/schedules/${encodeURIComponent(id)}`),
 
   listContacts: (p: { search?: string; opted_out?: boolean; limit?: number; offset?: number }) =>
     request<Page<Contact>>("GET", `/contacts${qs(p)}`),
@@ -112,8 +104,4 @@ export const api = {
     request<{ registered: boolean }>("POST", `/settings/sessions/${encodeURIComponent(id)}/webhook`),
   syncSession: (id: string) =>
     request<{ groups: number }>("POST", `/settings/sessions/${encodeURIComponent(id)}/sync`),
-
-  getActions: () => request<Actions>("GET", "/actions"),
-  runAction: (name: ActionName) =>
-    request<{ job_id: string }>("POST", `/actions/${name === "load_kb" ? "load-kb" : name}`),
 };

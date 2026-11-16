@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 import pytest_asyncio
 
-from models import Group, KBTopic, Message, Reaction, Sender
+from models import Group, Message, Reaction, Sender
 from test_utils.openwa_session import OTHER_SESSION_ID, TEST_SESSION_ID
 
 pytestmark = pytest.mark.usefixtures("other_session_row")
@@ -47,18 +47,6 @@ async def seeded(db_sessionmaker, active_sessions, other_session_row):
             session.add(
                 Reaction(message_id=mid, sender_jid=USER, emoji="x", timestamp=T)
             )
-        for tid, jid in (("ta", "a@g.us"), ("tb", "b@g.us")):
-            session.add(
-                KBTopic(
-                    id=tid,
-                    group_jid=jid,
-                    start_time=T - timedelta(hours=1),
-                    speakers="a",
-                    subject="s",
-                    summary="x",
-                    embedding=None,
-                )
-            )
         await session.commit()
 
 
@@ -87,7 +75,6 @@ async def test_stats_are_scoped_to_the_session(admin_client):
     assert body["messages"] == 3
     assert body["groups"] == {"total": 1, "managed": 1}
     assert body["reactions"] == 1
-    assert body["kb_topics"] == 1
     assert [g["group_jid"] for g in body["top_groups"]] == ["a@g.us"]
 
     other = (
@@ -121,7 +108,7 @@ async def test_stats_without_any_active_session_are_empty(
     assert resp.status_code == 200
     body = resp.json()
     assert body["messages"] == body["chats"] == body["active_senders"] == 0
-    assert body["reactions"] == body["kb_topics"] == 0
+    assert body["reactions"] == 0
     assert body["groups"] == {"total": 0, "managed": 0}
     assert body["top_groups"] == [] and body["top_senders"] == []
     assert body["bot_excluded"] is False
@@ -133,5 +120,3 @@ async def test_stats_without_any_active_session_are_empty(
 async def test_single_group_endpoints_work_for_any_session_group(admin_client):
     resp = await admin_client.get("/api/v1/admin/groups/b@g.us")
     assert resp.status_code == 200 and resp.json()["group_jid"] == "b@g.us"
-    resp = await admin_client.get("/api/v1/admin/groups/b@g.us/schedules")
-    assert resp.status_code == 200

@@ -107,7 +107,6 @@ function Tiles({ s }: { s: Stats }) {
         <Tile label="Messages" value={s.messages} />
         <Tile label="Active senders" value={s.active_senders} />
         <Tile label="Reactions" value={s.reactions} />
-        <Tile label="Knowledge-base topics" value={s.kb_topics} />
       </dl>
     </section>
   );

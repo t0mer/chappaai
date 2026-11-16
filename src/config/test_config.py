@@ -4,17 +4,6 @@ from pydantic import ValidationError
 from config import Settings
 
 
-def test_qa_testers_are_canonicalized_to_s_whatsapp_net():
-    assert Settings.validate_qa_testers(
-        ["972501234567@c.us", "972509999999@s.whatsapp.net"]
-    ) == ["972501234567@s.whatsapp.net", "972509999999@s.whatsapp.net"]
-
-
-def test_qa_testers_reject_group_jids():
-    with pytest.raises(ValueError):
-        Settings.validate_qa_testers(["1203@g.us"])
-
-
 REQUIRED = dict(
     db_uri="postgresql+asyncpg://u:p@h/db",
     settings_encryption_key="A" * 43 + "=",
@@ -38,15 +27,15 @@ def test_admin_session_secret_must_be_long_enough():
     assert ok.admin_session_secret == "x" * 32
 
 
-def test_timezone_defaults_to_jerusalem_and_scheduler_enabled(monkeypatch):
+def test_timezone_defaults_to_jerusalem(monkeypatch):
     monkeypatch.delenv("TIMEZONE", raising=False)
-    monkeypatch.delenv("SCHEDULER_ENABLED", raising=False)
     s = Settings(_env_file=None, **REQUIRED)  # pyright: ignore[reportCallIssue]
     assert s.timezone == "Asia/Jerusalem"
-    assert s.scheduler_enabled is True
 
 
-@pytest.mark.parametrize("name", ["UTC", "Europe/London", "Asia/Jerusalem", "EST5EDT"])
+@pytest.mark.parametrize(
+    "name", ["UTC", "Europe/London", "Asia/Jerusalem", "America/New_York"]
+)
 def test_timezone_accepts_listed_iana_names(name):
     assert Settings.model_validate({**REQUIRED, "timezone": name}).timezone == name
 
@@ -81,11 +70,6 @@ def test_default_timezone_is_validated(monkeypatch):
     with pytest.raises(ValidationError) as exc:
         Settings.model_validate(REQUIRED)
     assert "Asia/Jerusalem" in str(exc.value)
-
-
-def test_scheduler_can_be_disabled():
-    s = Settings.model_validate({**REQUIRED, "scheduler_enabled": False})
-    assert s.scheduler_enabled is False
 
 
 def test_settings_load_without_legacy_openwa_keys(monkeypatch):

@@ -2,30 +2,10 @@ import { useId, useRef, useState, type FormEvent } from "react";
 import TagInput from "./TagInput";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent } from "./ui/dialog";
-import { Field, Input, Select } from "./ui/field";
+import { Field, Input } from "./ui/field";
 import { InlineError } from "./ui/inline-error";
 import { useReturnFocus } from "./useReturnFocus";
-import type { Group, GroupPatch, SummaryLanguage } from "../types";
-
-export const LANGUAGES: { value: SummaryLanguage; label: string }[] = [
-  { value: "he", label: "HE" },
-  { value: "en", label: "EN" },
-  { value: "ru", label: "RU" },
-];
-
-/** Select value ("" = Auto) to API value. */
-export function toLanguage(value: string): SummaryLanguage | null {
-  return LANGUAGES.find((l) => l.value === value)?.value ?? null;
-}
-
-export function LanguageOptions() {
-  return (
-    <>
-      <option value="">Auto</option>
-      {LANGUAGES.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-    </>
-  );
-}
+import type { Group, GroupPatch } from "../types";
 
 function ReadOnly({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -51,7 +31,6 @@ interface Props {
 export default function EditGroupDialog({ group, error, saving, onCancel, onSave, returnFocus }: Props) {
   const [displayName, setDisplayName] = useState(group.display_name ?? "");
   const [keys, setKeys] = useState<string[]>(group.community_keys);
-  const [language, setLanguage] = useState<string>(group.summary_language ?? "");
   const nameInput = useRef<HTMLInputElement>(null);
   const keysHint = useId();
   const onCloseAutoFocus = useReturnFocus(returnFocus);
@@ -62,7 +41,6 @@ export default function EditGroupDialog({ group, error, saving, onCancel, onSave
     const patch: GroupPatch = {};
     if (displayName.trim() !== (group.display_name ?? "")) patch.display_name = displayName.trim() || null;
     if (JSON.stringify(keys) !== JSON.stringify(group.community_keys)) patch.community_keys = keys;
-    if (language !== (group.summary_language ?? "")) patch.summary_language = toLanguage(language);
     if (Object.keys(patch).length === 0) return onCancel();
     void onSave(patch);
   }
@@ -88,16 +66,11 @@ export default function EditGroupDialog({ group, error, saving, onCancel, onSave
           <Field label="Display name">
             <Input ref={nameInput} value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={255} dir="auto" />
           </Field>
-          <Field label="Summary language">
-            <Select value={language} onChange={(e) => setLanguage(e.target.value)}>
-              <LanguageOptions />
-            </Select>
-          </Field>
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium" aria-hidden="true">Community keys</span>
             <TagInput value={keys} onChange={setKeys} label="Community keys" describedBy={keysHint} />
             <span id={keysHint} className="text-xs text-muted-foreground">
-              Groups that share a key also receive each other&apos;s summaries and knowledge. Press Enter or comma to add a key.
+              Free-form keys that link related groups. Press Enter or comma to add a key.
             </span>
           </div>
           {error && <InlineError>{error}</InlineError>}

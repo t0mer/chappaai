@@ -103,7 +103,7 @@ export default function OptOuts() {
   async function remove(target: string) {
     const ok = await confirm({
       title: "Remove from the opt-out list?",
-      text: `${target} will be tagged in summaries again.`,
+      text: `Messages from ${target} will be processed again.`,
       confirmText: "Remove",
       danger: true,
     });
@@ -129,7 +129,7 @@ export default function OptOuts() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Opt-outs" description="Opted-out contacts are shown by name instead of being @-mentioned in summaries and answers." />
+      <PageHeader title="Opt-outs" description="People on this list will be left out of trip indexing and AI features." />
       <form aria-label="Add opt-out" className="flex flex-col gap-2" onSubmit={add}>
         {/* The hint sits below the row, so the button lines up with the input itself (sm:items-end). */}
         <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-end">
@@ -146,7 +146,7 @@ export default function OptOuts() {
           <LoadingRows desktop={desktop} />
         ) : data && items.length === 0 ? (
           <div className="rounded-lg border bg-surface">
-            <EmptyState icon={BellRing} title="Nobody has opted out.">Contacts you add here are no longer @-mentioned by the bot.</EmptyState>
+            <EmptyState icon={BellRing} title="Nobody has opted out.">Contacts you add here will be left out of trip indexing and AI features.</EmptyState>
           </div>
         ) : !data ? null : desktop ? (
           <div className="overflow-x-auto rounded-lg border bg-surface">

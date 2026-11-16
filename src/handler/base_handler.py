@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Sequence
 
 from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import insert
@@ -18,7 +17,6 @@ from models import (
     upsert,
 )
 from whatsapp import InboundMessage, InboundReaction, WhatsAppGateway
-from whatsapp.jid import normalize_jid
 
 logger = logging.getLogger(__name__)
 
@@ -121,47 +119,6 @@ class BaseHandler:
         except Exception as e:
             logger.error(f"Error storing reaction: {e}")
             return None
-
-    async def send_message(
-        self,
-        to_jid: str,
-        message: str,
-        in_reply_to: str | None = None,
-        mentions: Sequence[str] = (),
-    ) -> Message:
-        """
-        Send a message to a JID over WhatsApp, and store the message in the database
-        :param to_jid: The JID to send the message to
-        :param message: The message text to send
-        :param in_reply_to: The JID of the message to reply to [Optional]
-        :param mentions: JIDs tagged in the message text as @<number> [Optional]
-        :return: The stored message
-        """
-        assert to_jid, "to_jid is required"
-        assert message, "message is required"
-        to_jid = normalize_jid(to_jid)
-
-        if mentions:
-            sent_message_id = await self.whatsapp.send_text(
-                to_jid, message, in_reply_to, mentions=mentions
-            )
-        else:
-            sent_message_id = await self.whatsapp.send_text(
-                to_jid, message, in_reply_to
-            )
-        assert sent_message_id, "Failed to get sent message ID"
-        my_number = await self.whatsapp.get_my_jid()
-        new_message = BaseMessage(
-            message_id=sent_message_id,
-            text=message,
-            sender_jid=str(my_number),
-            chat_jid=to_jid,
-            reply_to_id=in_reply_to,
-            session_id=self.session_id,
-        )
-        stored_message = await self.store_message(Message(**new_message.model_dump()))
-        assert stored_message, "Failed to store message"
-        return stored_message
 
     async def _foreign_group(self, group_jid: str | None) -> bool:
         """True when the group exists and belongs to another session."""

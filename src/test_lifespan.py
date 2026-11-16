@@ -61,7 +61,6 @@ def boot(main_module, db_sessionmaker, monkeypatch):
                 "anthropic_api_key": "a",
                 "voyage_api_key": "v",
                 "logfire_token": "l",
-                "scheduler_enabled": False,
                 # explicit, so a local .env/environment cannot leak in
                 **{k: "" for k in LEGACY},
                 **env,

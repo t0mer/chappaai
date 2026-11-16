@@ -28,7 +28,6 @@ function stats(over: Partial<Stats> = {}): Stats {
     messages: 1234,
     active_senders: 87,
     reactions: 45,
-    kb_topics: 6,
     split: { text: 1000, media: 200, other: 30 },
     series: [
       { start: "2026-10-13T00:00:00+03:00", count: 0 },
@@ -339,7 +338,6 @@ describe("Dashboard content", () => {
     expect(within(tile("Messages")).getByRole("definition")).toHaveTextContent("1,234");
     expect(within(tile("Active senders")).getByRole("definition")).toHaveTextContent("87");
     expect(within(tile("Reactions")).getByRole("definition")).toHaveTextContent("45");
-    expect(within(tile("Knowledge-base topics")).getByRole("definition")).toHaveTextContent("6");
   });
 
   it("shows the server time zone", async () => {
@@ -551,7 +549,6 @@ describe("Dashboard states", () => {
         chats: 0,
         active_senders: 0,
         reactions: 0,
-        kb_topics: 0,
         series: [],
         top_groups: [],
         top_senders: [],
@@ -586,7 +583,7 @@ describe("Dashboard structure", () => {
   it("sets the page title and heading", async () => {
     renderAt();
     await loaded();
-    expect(document.title).toBe("Dashboard · WhatsApp Bot Admin");
+    expect(document.title).toBe("Dashboard · Chappa'ai");
     expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeInTheDocument();
   });
 

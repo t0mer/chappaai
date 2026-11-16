@@ -102,10 +102,6 @@ describe("production bundle", () => {
     expect(unlayeredViolations(tree)).toEqual([]);
     // swal rules stay unlayered so they beat sweetalert2's own unlayered CSS
     expect(tree.some((n) => n.head.includes(".swal-popup"))).toBe(true);
-    // the Bot actions results list is styled by unlayered swal rules too
-    for (const sel of [".swal-results", ".swal-result", ".swal-result-badge-sent", ".swal-result-badge-failed", ".swal-result-badge-skipped", ".swal-result-detail"]) {
-      expect(tree.some((n) => !n.children && n.head.split(",").map((x) => x.trim()).includes(sel)), sel).toBe(true);
-    }
   });
 
   it("provides the .jid bidi utility (left-to-right isolate) in the components layer", () => {

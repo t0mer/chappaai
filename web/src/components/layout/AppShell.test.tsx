@@ -57,8 +57,8 @@ describe("AppShell breakpoints", () => {
     first.unmount();
     setup(1023);
     expect(document.querySelector("aside")).toHaveClass("w-16");
-    const link = screen.getByRole("link", { name: "Bot actions" });
-    expect(link).toHaveAttribute("title", "Bot actions");
+    const link = screen.getByRole("link", { name: "Messages" });
+    expect(link).toHaveAttribute("title", "Messages");
     expect(link.textContent).toBe("");
   });
 
@@ -81,14 +81,14 @@ describe("AppShell breakpoints", () => {
     setup(1024);
     const nav = screen.getByRole("navigation", { name: "Main" });
     expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual([
-      "Dashboard", "Groups", "Messages", "Bot actions", "Contacts", "Opt-outs", "Settings",
+      "Dashboard", "Groups", "Messages", "Contacts", "Opt-outs", "Settings",
     ]);
   });
 
-  it("phone tabs are Dashboard, Groups, Messages, Bot actions and More (Contacts and Opt-outs inside More)", async () => {
+  it("phone tabs are Dashboard, Groups, Messages and More (Contacts and Opt-outs inside More)", async () => {
     setup(375, "/messages");
     const nav = screen.getByRole("navigation", { name: "Main" });
-    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Dashboard", "Groups", "Messages", "Bot actions"]);
+    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Dashboard", "Groups", "Messages"]);
     expect(within(nav).getByRole("button", { name: "More" })).toBeInTheDocument();
     await userEvent.click(within(nav).getByRole("button", { name: "More" }));
     const sheet = screen.getByRole("dialog", { name: "More" });
@@ -172,7 +172,7 @@ describe("skip link and landmarks", () => {
 
   it("shows the brand name", () => {
     setup(375);
-    expect(screen.getByText("WhatsApp Bot Admin")).toBeInTheDocument();
+    expect(screen.getByText("Chappa'ai")).toBeInTheDocument();
   });
 });
 

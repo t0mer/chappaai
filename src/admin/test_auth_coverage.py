@@ -19,7 +19,6 @@ EXPECTED_PREFIXES = {
     "/contacts",
     "/opt-outs",
     "/messages",
-    "/actions",
     "/stats",
     "/settings",
 }

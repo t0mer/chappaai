@@ -1,6 +1,4 @@
-import pytest
 from models.group import Group
-from unittest.mock import AsyncMock, MagicMock
 
 
 def test_group_normalization():
@@ -19,36 +17,3 @@ def test_group_normalization():
         }
     )
     assert group_validated.owner_jid == "1234567890@s.whatsapp.net"
-
-
-@pytest.mark.asyncio
-async def test_get_related_community_groups():
-    group = Group(session_id="s1", group_jid="g1@g.us", community_keys=["key1"])
-    mock_session = AsyncMock()
-
-    # Mock result
-    mock_result = MagicMock()
-    mock_result.all.return_value = [Group(session_id="s1", group_jid="g2@g.us")]
-    mock_session.exec.return_value = mock_result
-
-    related = await group.get_related_community_groups(mock_session)
-    assert len(related) == 1
-    assert related[0].group_jid == "g2@g.us"
-    mock_session.exec.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_get_related_community_groups_no_keys():
-    group = Group(session_id="s1", group_jid="g1@g.us", community_keys=[])
-    mock_session = AsyncMock()
-
-    related = await group.get_related_community_groups(mock_session)
-    assert related == []
-    mock_session.exec.assert_not_called()
-
-
-def test_summary_language_column_is_nullable_two_char_string():
-    column = Group.__table__.c.summary_language  # pyright: ignore[reportAttributeAccessIssue]
-    assert column.nullable is True
-    assert column.type.length == 2
-    assert Group(session_id="s1", group_jid="1@g.us").summary_language is None

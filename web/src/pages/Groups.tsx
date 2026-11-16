@@ -2,8 +2,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { Users } from "lucide-react";
 import { api } from "../api";
 import { confirm, toast } from "../alerts";
-import EditGroupDialog, { LanguageOptions, toLanguage } from "../components/EditGroupDialog";
-import SchedulesDialog from "../components/SchedulesDialog";
+import EditGroupDialog from "../components/EditGroupDialog";
 import { Button } from "../components/ui/button";
 import { EmptyState } from "../components/ui/empty-state";
 import { Input, Select } from "../components/ui/field";
@@ -25,28 +24,19 @@ const FILTERS: { value: Managed; label: string }[] = [
   { value: "unmanaged", label: "Disabled" },
 ];
 
-function fmt(ts: string): string {
-  return new Date(ts).toLocaleString();
-}
-
 const groupLabel = (g: Group) => g.display_name || g.group_name || g.group_jid;
-/** Starts with the visible button text ("Schedules 2") so the name contains its label (WCAG 2.5.3). */
-const schedulesName = (g: Group) => `Schedules ${g.schedule_count} for ${groupLabel(g)}`;
 
 /**
  * Dialog openers carry a stable key, so focus can return to the opener even when the table/cards
  * swap (a viewport resize while a dialog is open) replaced the element that opened it.
  */
-type OpenerKind = "edit" | "schedules";
-const openerKey = (kind: OpenerKind, g: Group) => `${kind}:${g.group_jid}`;
+const openerKey = (g: Group) => `edit:${g.group_jid}`;
 
 /** Everything a row or card needs to act on one group. */
 interface RowProps {
   group: Group;
   saving: boolean;
   onToggleManaged: (g: Group) => void;
-  onSave: (g: Group, patch: GroupPatch) => void;
-  onSchedules: (g: Group) => void;
   onEdit: (g: Group) => void;
 }
 
@@ -61,7 +51,6 @@ function GroupName({ g }: { g: Group }) {
       <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
         {g.community_keys.length > 0 && <span>Community keys: <bdi>{g.community_keys.join(", ")}</bdi></span>}
         <span>{g.message_count} {g.message_count === 1 ? "message" : "messages"}</span>
-        <span>Last summary: <bdi>{fmt(g.last_summary_sync)}</bdi></span>
       </div>
     </div>
   );
@@ -70,20 +59,8 @@ function GroupName({ g }: { g: Group }) {
 /** Larger hit area (44px) without changing the switch's look. */
 const SWITCH_HIT = "relative after:absolute after:-inset-2.5 after:content-['']";
 
-function RespondSwitch({ group: g, saving, onToggleManaged }: RowProps) {
-  return <Switch className={SWITCH_HIT} checked={g.managed} onCheckedChange={() => onToggleManaged(g)} aria-label={`Respond in ${g.group_jid}`} disabled={saving} />;
-}
-
-function SpamSwitch({ group: g, saving, onSave }: RowProps) {
-  return <Switch className={SWITCH_HIT} checked={g.notify_on_spam} onCheckedChange={() => onSave(g, { notify_on_spam: !g.notify_on_spam })} aria-label={`Spam notice in ${g.group_jid}`} disabled={saving} />;
-}
-
-function LanguageSelect({ group: g, saving, onSave, className }: RowProps & { className?: string }) {
-  return (
-    <Select className={className} value={g.summary_language ?? ""} onChange={(e) => onSave(g, { summary_language: toLanguage(e.target.value) })} aria-label={`Summary language for ${groupLabel(g)}`} disabled={saving}>
-      <LanguageOptions />
-    </Select>
-  );
+function EnabledSwitch({ group: g, saving, onToggleManaged }: RowProps) {
+  return <Switch className={SWITCH_HIT} checked={g.managed} onCheckedChange={() => onToggleManaged(g)} aria-label={`Enabled for ${g.group_jid}`} disabled={saving} />;
 }
 
 function GroupTableRow(p: RowProps) {
@@ -91,16 +68,8 @@ function GroupTableRow(p: RowProps) {
   return (
     <tr className="border-t align-middle hover:bg-surface-2/60">
       <td className="w-full px-3 py-1.5"><GroupName g={g} /></td>
-      <td className="px-3 py-1.5"><RespondSwitch {...p} /></td>
-      <td className="px-3 py-1.5"><SpamSwitch {...p} /></td>
-      <td className="px-3 py-1.5"><div className="w-28"><LanguageSelect {...p} className="min-h-9" /></div></td>
-      <td className="px-3 py-1.5">
-        <span className="inline-flex items-center gap-2">
-          <span className="schedule-count tabular">{g.schedule_count}</span>
-          <Button size="table" data-opener={openerKey("schedules", g)} onClick={() => p.onSchedules(g)} aria-label={schedulesName(g)}>Schedules</Button>
-        </span>
-      </td>
-      <td className="px-3 py-1.5 text-end"><Button size="table" data-opener={openerKey("edit", g)} onClick={() => p.onEdit(g)} aria-label={`Edit ${g.group_jid}`}>Edit</Button></td>
+      <td className="px-3 py-1.5"><EnabledSwitch {...p} /></td>
+      <td className="px-3 py-1.5 text-end"><Button size="table" data-opener={openerKey(g)} onClick={() => p.onEdit(g)} aria-label={`Edit ${g.group_jid}`}>Edit</Button></td>
     </tr>
   );
 }
@@ -116,24 +85,16 @@ function GroupCard(p: RowProps) {
     <li className="flex flex-col gap-2 rounded-lg border bg-surface p-3">
       <GroupName g={g} />
       <div className="flex flex-wrap gap-x-6">
-        <SwitchRow label="Respond"><RespondSwitch {...p} /></SwitchRow>
-        <SwitchRow label="Spam notice"><SpamSwitch {...p} /></SwitchRow>
+        <SwitchRow label="Enabled"><EnabledSwitch {...p} /></SwitchRow>
       </div>
-      <div className="flex flex-col gap-1">
-        <span className="text-xs text-muted-foreground">Language</span>
-        <LanguageSelect {...p} />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <Button size="lg" data-opener={openerKey("schedules", g)} onClick={() => p.onSchedules(g)} aria-label={schedulesName(g)}>
-          Schedules <span className="schedule-count tabular">{g.schedule_count}</span>
-        </Button>
-        <Button size="lg" data-opener={openerKey("edit", g)} onClick={() => p.onEdit(g)} aria-label={`Edit ${g.group_jid}`}>Edit</Button>
+      <div className="grid gap-2">
+        <Button size="lg" data-opener={openerKey(g)} onClick={() => p.onEdit(g)} aria-label={`Edit ${g.group_jid}`}>Edit</Button>
       </div>
     </li>
   );
 }
 
-const HEADERS = ["Group", "Respond", "Spam notice", "Summary language", "Schedules"];
+const HEADERS = ["Group", "Enabled"];
 
 function LoadingRows({ desktop }: { desktop: boolean }) {
   const label = <span className="sr-only">Loading…</span>;
@@ -161,7 +122,6 @@ export default function Groups() {
   const [sort, setSort] = useState<GroupSort>("name");
   const [offset, setOffset] = useState(0);
   const [editing, setEditing] = useState<Group | null>(null);
-  const [scheduling, setScheduling] = useState<Group | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [savingJid, setSavingJid] = useState<string | null>(null);
   const searchInput = useRef<HTMLInputElement>(null);
@@ -209,11 +169,10 @@ export default function Groups() {
 
   async function toggleManaged(group: Group) {
     if (!group.managed) {
-      const since = fmt(group.last_summary_sync);
       const ok = await confirm({
-        title: `Enable the bot in "${label(group)}"?`,
-        text: `It will reply to mentions immediately, and the next summary will cover every message since ${since}.`,
-        confirmText: "Enable bot",
+        title: `Enable "${label(group)}"?`,
+        text: "The group will be tracked. Trip features for tracked groups are coming in the next release.",
+        confirmText: "Enable",
       });
       if (!ok) return;
     }
@@ -232,14 +191,12 @@ export default function Groups() {
     group,
     saving: savingJid === group.group_jid,
     onToggleManaged: (g) => void toggleManaged(g),
-    onSave: (g, patch) => void save(g, patch),
-    onSchedules: setScheduling,
     onEdit: setEditing,
   });
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Groups" description="Choose where the bot replies, how summaries are written and when they are sent." />
+      <PageHeader title="Groups" description="Choose which groups are tracked and how they are named." />
       <form role="search" aria-label="Group filters" className="flex flex-col gap-3" onSubmit={onSearch}>
         <div className="flex flex-wrap gap-2">
           <Input ref={searchInput} className="min-w-0 flex-1 basis-56" placeholder="Search name, topic or JID" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search groups" />
@@ -255,8 +212,6 @@ export default function Groups() {
             <Select value={sort} onChange={(e) => { setOffset(0); setSort(e.target.value as GroupSort); }} aria-label="Sort">
               <option value="name">Name</option>
               <option value="-message_count">Most messages</option>
-              <option value="-last_summary_sync">Last summary (newest)</option>
-              <option value="last_summary_sync">Last summary (oldest)</option>
               <option value="-created_at">Newest</option>
             </Select>
           </div>
@@ -300,18 +255,10 @@ export default function Groups() {
         <Button size="lg" className="lg:min-h-9" disabled={offset + PAGE >= total} onClick={() => setOffset(offset + PAGE)}>Next</Button>
       </div>
       </div>
-      {scheduling && (
-        <SchedulesDialog
-          group={{ group_jid: scheduling.group_jid, label: label(scheduling), managed: scheduling.managed }}
-          onClose={() => setScheduling(null)}
-          returnFocus={() => returnFocus(openerKey("schedules", scheduling))}
-          onChanged={() => void reload()}
-        />
-      )}
       {editing && (
         <EditGroupDialog
           group={editing}
-          returnFocus={() => returnFocus(openerKey("edit", editing))}
+          returnFocus={() => returnFocus(openerKey(editing))}
           error={dialogError}
           saving={savingJid === editing.group_jid}
           onCancel={() => { setDialogError(null); setEditing(null); }}

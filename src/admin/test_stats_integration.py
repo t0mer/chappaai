@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from api.deps import get_optional_whatsapp
-from models import Group, KBTopic, Message, Reaction, Sender
+from models import Group, Message, Reaction, Sender
 from whatsapp.jid import parse_jid
 from test_utils.openwa_session import TEST_SESSION_ID
 
@@ -196,30 +196,6 @@ async def test_top_senders_are_limited_to_ten(admin_client, db_sessionmaker, bot
     )
     body = (await admin_client.get(BASE, params=RANGE)).json()
     assert [s["sender_jid"] for s in body["top_senders"]] == jids[:10]
-
-
-async def test_kb_topics_counted_by_start_time_in_range(
-    admin_client, db_sessionmaker, bot
-):
-    def topic(tid, ts):
-        return KBTopic(
-            id=tid,
-            group_jid=G1,
-            start_time=ts,
-            speakers="a",
-            subject="s",
-            summary="x",
-            embedding=None,
-        )
-
-    await _add(
-        db_sessionmaker,
-        topic("in", T),
-        topic("out", T - timedelta(days=3)),
-        groups=[Group(session_id=TEST_SESSION_ID, group_jid=G1)],
-    )
-    body = (await admin_client.get(BASE, params=RANGE)).json()
-    assert body["kb_topics"] == 1
 
 
 async def test_late_utc_message_lands_on_next_local_day(

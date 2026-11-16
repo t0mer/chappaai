@@ -8,7 +8,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 # fresh_db_uri is a fixture: importing it registers it here (hence F401/F811)
-from test_migration_schedule import _config, fresh_db_uri  # noqa: F401
+from test_migrations import _config, fresh_db_uri  # noqa: F401
 
 REV = "f6a7b8c9d0e1"
 PREV = "e5f6a7b8c9d0"
@@ -104,7 +104,7 @@ def test_backfills_existing_rows_with_env_session(fresh_db_uri, monkeypatch):
     _seed_rows(fresh_db_uri)
 
     monkeypatch.setenv("OPENWA_SESSION_ID", "legacy-1")
-    command.upgrade(config, "head")
+    command.upgrade(config, REV)
 
     sessions, group_ids, message_ids, nullable, version = _snapshot(fresh_db_uri)
     assert version == REV
@@ -121,7 +121,7 @@ def test_backfills_existing_rows_with_env_session(fresh_db_uri, monkeypatch):
 
 def test_empty_tables_and_no_env_create_no_session(fresh_db_uri, monkeypatch, tmp_path):
     _no_legacy_session(monkeypatch, tmp_path)
-    command.upgrade(_config(fresh_db_uri), "head")
+    command.upgrade(_config(fresh_db_uri), REV)
 
     sessions, group_ids, message_ids, nullable, version = _snapshot(fresh_db_uri)
     assert version == REV
@@ -139,7 +139,7 @@ def test_existing_rows_and_no_env_create_disabled_default(
     config = _config(fresh_db_uri)
     command.upgrade(config, PREV)
     _seed_rows(fresh_db_uri)
-    command.upgrade(config, "head")
+    command.upgrade(config, REV)
 
     sessions, group_ids, message_ids, _, _ = _snapshot(fresh_db_uri)
     assert len(sessions) == 1
@@ -153,7 +153,7 @@ def test_downgrade_removes_tables_and_columns(fresh_db_uri, monkeypatch):
     config = _config(fresh_db_uri)
     command.upgrade(config, PREV)
     _seed_rows(fresh_db_uri)
-    command.upgrade(config, "head")
+    command.upgrade(config, REV)
     command.downgrade(config, PREV)
 
     async def work():
@@ -177,14 +177,14 @@ def test_downgrade_removes_tables_and_columns(fresh_db_uri, monkeypatch):
     assert not has_session and not has_conn
     assert "session_id" not in group_cols and "session_id" not in message_cols
 
-    command.upgrade(config, "head")
+    command.upgrade(config, REV)
     assert _snapshot(fresh_db_uri)[-1] == REV
 
 
 @pytest.mark.parametrize("table", ["openwa_connection", "openwa_session"])
 def test_new_tables_exist_at_head(fresh_db_uri, monkeypatch, tmp_path, table):
     _no_legacy_session(monkeypatch, tmp_path)
-    command.upgrade(_config(fresh_db_uri), "head")
+    command.upgrade(_config(fresh_db_uri), REV)
 
     async def work():
         engine = create_async_engine(fresh_db_uri)
@@ -204,7 +204,7 @@ def test_backfills_existing_rows_with_session_from_dotenv(
     _seed_rows(fresh_db_uri)
 
     _dotenv_session(monkeypatch, tmp_path, "from-dotenv")
-    command.upgrade(config, "head")
+    command.upgrade(config, REV)
 
     sessions, group_ids, message_ids, _, _ = _snapshot(fresh_db_uri)
     assert len(sessions) == 1
@@ -217,7 +217,7 @@ def test_env_session_with_empty_tables_creates_enabled_session(
     fresh_db_uri, monkeypatch
 ):
     monkeypatch.setenv("OPENWA_SESSION_ID", "legacy-1")
-    command.upgrade(_config(fresh_db_uri), "head")
+    command.upgrade(_config(fresh_db_uri), REV)
 
     sessions, group_ids, message_ids, _, _ = _snapshot(fresh_db_uri)
     assert [(s[1], s[2]) for s in sessions] == [("legacy-1", True)]

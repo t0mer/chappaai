@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 
-export const APP_NAME = "WhatsApp Bot Admin";
+export const APP_NAME = "Chappa'ai";
 
 /** Every page opens with the same header: title, one line on what the page is for, and its actions. */
 export function PageHeader({

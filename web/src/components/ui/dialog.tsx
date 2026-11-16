@@ -105,7 +105,7 @@ function InertOutside() {
 }
 
 /**
- * A bottom sheet on phones, a centred dialog from md. `wide` widens it (Schedules). Extra Radix
+ * A bottom sheet on phones, a centred dialog from md. `wide` widens it. Extra Radix
  * Content props pass through. `closeDisabled` (use while saving) disables the close button and
  * blocks Escape and outside clicks, after any caller handlers have run.
  *

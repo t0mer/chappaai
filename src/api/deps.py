@@ -8,7 +8,6 @@ from handler import MessageHandler
 from openwa_settings.registry import GatewayRegistry
 from whatsapp import WhatsAppGateway
 from voyageai.client_async import AsyncClient
-from config import Settings
 from config import get_settings as get_settings  # re-exported for API modules
 
 
@@ -126,13 +125,12 @@ def get_text_embebedding(request: Request) -> AsyncClient:
 
 
 def build_handler(
-    request: Request, db: AsyncSession, session_pk: str, settings: Settings
+    request: Request, db: AsyncSession, session_pk: str
 ) -> MessageHandler:
     """Message handler bound to one active session's gateway."""
     return MessageHandler(
         db,
         request.app.state.registry.get(session_pk),
         get_text_embebedding(request),
-        settings,
         session_pk,
     )

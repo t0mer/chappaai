@@ -2,7 +2,7 @@
 import Swal from "sweetalert2";
 import { waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { confirm, deferredToasts, errorDialog, showSummaryResults, toast, modalsIdle } from "./alerts";
+import { confirm, deferredToasts, errorDialog, toast, modalsIdle } from "./alerts";
 
 // jsdom has no matchMedia, which SweetAlert2 uses when rendering icons.
 window.matchMedia ??= ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} })) as never;
@@ -40,29 +40,20 @@ describe("alerts never render data as HTML", () => {
     expect(injected()).toBeNull();
   });
 
-  it("showSummaryResults", async () => {
-    void showSummaryResults([
-      { group_name: EVIL, group_jid: "1@g.us", status: "failed", reason: EVIL, message_count: null, required: null },
-    ]);
-    await flush();
-    expect(injected()).toBeNull();
-    expect(document.body.textContent).toContain(EVIL);
-  });
-
   it("a toast raised while a confirm is open does not dismiss the confirm", async () => {
     let settled: boolean | undefined;
     void confirm({ title: "Sure?" }).then((v) => { settled = v; });
     await flush();
     toast.success("Saved");
-    void showSummaryResults([]);
+    void errorDialog("Queued", "The second modal.");
     await flush();
     expect(settled).toBeUndefined();
     expect(document.querySelector(".swal2-container:not(.swal2-top-end) .swal2-confirm")).not.toBeNull();
     Swal.clickConfirm();
     // confirm settles once SweetAlert has fully closed the popup
     await waitFor(() => expect(settled).toBe(true));
-    // the queued results modal now shows; close it, then the deferred toast appears
-    await waitFor(() => expect(document.body.textContent).toContain("No groups were processed."));
+    // the queued error modal now shows; close it, then the deferred toast appears
+    await waitFor(() => expect(document.body.textContent).toContain("The second modal."));
     expect(document.querySelector(".swal-toast")).toBeNull(); // still deferred behind the modal
     Swal.clickConfirm();
     await waitFor(() => expect(document.querySelector(".swal-toast")).not.toBeNull());

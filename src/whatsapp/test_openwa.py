@@ -1,6 +1,5 @@
 import httpx
 import pytest
-from pytest_httpx import HTTPXMock
 
 from whatsapp.gateway import GatewayError
 from whatsapp.openwa import OpenWAGateway
@@ -13,100 +12,6 @@ SESSION = f"{BASE}/api/sessions/s1"
 @pytest.fixture
 def gateway():
     return OpenWAGateway(BASE, api_key="k", session_id="s1", groups_page_size=2)
-
-
-async def test_send_text_maps_jid_and_reply(gateway, httpx_mock: HTTPXMock):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{SESSION}/messages/send-text",
-        match_headers={"X-API-Key": "k"},
-        match_json={
-            "chatId": "972501234567@c.us",
-            "text": "hi",
-            "quotedMessageId": "m0",
-        },
-        json={"messageId": "out1", "timestamp": 1},
-        status_code=201,
-    )
-    assert await gateway.send_text("972501234567@s.whatsapp.net", "hi", "m0") == "out1"
-
-
-async def test_send_text_group_without_reply_omits_quote(gateway, httpx_mock):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{SESSION}/messages/send-text",
-        match_json={"chatId": "120363@g.us", "text": "yo"},
-        json={"messageId": "out2"},
-        status_code=201,
-    )
-    assert await gateway.send_text("120363@g.us", "yo") == "out2"
-
-
-async def test_send_text_sends_mapped_deduped_mentions(gateway, httpx_mock):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{SESSION}/messages/send-text",
-        match_json={
-            "chatId": "120363@g.us",
-            "text": "hi @111 @222 @333",
-            "mentions": ["111@c.us", "222@lid", "333@c.us"],
-        },
-        json={"messageId": "out3"},
-        status_code=201,
-    )
-    sent = await gateway.send_text(
-        "120363@g.us",
-        "hi @111 @222 @333",
-        mentions=[
-            "111@s.whatsapp.net",
-            "222@lid",
-            "111@s.whatsapp.net",
-            "333@c.us",
-        ],
-    )
-    assert sent == "out3"
-
-
-async def test_send_text_caps_mentions(gateway, httpx_mock):
-    jids = [f"{10000 + i}@lid" for i in range(1100)]
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{SESSION}/messages/send-text",
-        match_json={"chatId": "120363@g.us", "text": "x", "mentions": jids[:1024]},
-        json={"messageId": "out4"},
-        status_code=201,
-    )
-    assert await gateway.send_text("120363@g.us", "x", mentions=jids) == "out4"
-
-
-async def test_send_text_session_not_ready_raises(gateway, httpx_mock):
-    httpx_mock.add_response(
-        method="POST", url=f"{SESSION}/messages/send-text", status_code=409
-    )
-    with pytest.raises(GatewayError, match="not ready"):
-        await gateway.send_text("120363@g.us", "yo")
-
-
-async def test_send_text_server_error_raises(gateway, httpx_mock):
-    httpx_mock.add_response(
-        method="POST", url=f"{SESSION}/messages/send-text", status_code=500, text="boom"
-    )
-    with pytest.raises(GatewayError, match="500"):
-        await gateway.send_text("120363@g.us", "yo")
-
-
-async def test_send_text_network_error_raises(gateway, httpx_mock):
-    httpx_mock.add_exception(httpx.ConnectError("down"))
-    with pytest.raises(GatewayError):
-        await gateway.send_text("120363@g.us", "yo")
-
-
-async def test_send_text_missing_message_id_raises(gateway, httpx_mock):
-    httpx_mock.add_response(
-        method="POST", url=f"{SESSION}/messages/send-text", json={}, status_code=201
-    )
-    with pytest.raises(GatewayError, match="messageId"):
-        await gateway.send_text("120363@g.us", "yo")
 
 
 async def test_get_status(gateway, httpx_mock):
@@ -228,13 +133,12 @@ async def test_ensure_webhook_existing_without_id_is_left_alone(
 
 async def test_non_json_success_response_is_gateway_error(gateway, httpx_mock):
     httpx_mock.add_response(
-        method="POST",
-        url=f"{SESSION}/messages/send-text",
+        url=SESSION,
         content=b"<html>" + b"x" * 5000 + b"</html>",
         status_code=200,
     )
     with pytest.raises(GatewayError, match="non-JSON") as exc:
-        await gateway.send_text("120363@g.us", "yo")
+        await gateway.get_status()
     assert len(str(exc.value)) < 500
 
 
@@ -344,20 +248,15 @@ async def test_get_my_lid_session_not_ready_is_none_and_cached(
 
 @pytest.mark.parametrize("status", [401, 409, 500])
 async def test_http_errors_carry_the_status_code(gateway, httpx_mock, status):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{SESSION}/messages/send-text",
-        status_code=status,
-        text="upstream body",
-    )
+    httpx_mock.add_response(url=SESSION, status_code=status, text="upstream body")
     with pytest.raises(GatewayError) as exc:
-        await gateway.send_text("120363@g.us", "yo")
+        await gateway.get_status()
     assert exc.value.status_code == status
 
 
 async def test_network_errors_have_no_status_code(gateway, httpx_mock):
     httpx_mock.add_exception(httpx.ConnectError("down"))
     with pytest.raises(GatewayError) as exc:
-        await gateway.send_text("120363@g.us", "yo")
+        await gateway.get_status()
     assert exc.value.status_code is None
     assert GatewayError("plain").status_code is None

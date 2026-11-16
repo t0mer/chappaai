@@ -14,7 +14,7 @@ vi.mock("sweetalert2", () => ({
   },
 }));
 
-import { confirm, errorDialog, showSummaryResults, summaryIcon, toast } from "./alerts";
+import { confirm, errorDialog, toast } from "./alerts";
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -43,51 +43,5 @@ describe("alerts", () => {
     fire.mockResolvedValueOnce({});
     await errorDialog("Failed", "nope");
     expect(fire.mock.calls[0][0]).toMatchObject({ icon: "error", titleText: "Failed", text: "nope" });
-  });
-
-  it("showSummaryResults lists groups with reasons and escapes html", async () => {
-    fire.mockResolvedValueOnce({});
-    await showSummaryResults([
-      { group_name: "<b>A</b>", group_jid: "1@g.us", status: "sent", reason: null, message_count: 20, required: 15 },
-      { group_name: "B", group_jid: "2@g.us", status: "skipped", reason: "not_enough_messages", message_count: 9, required: 15 },
-      { group_name: "C", group_jid: "3@g.us", status: "failed", reason: "boom", message_count: null, required: null },
-    ]);
-    const opts = fire.mock.calls[0][0];
-    expect(opts.titleText).toBe("Summary results");
-    expect(opts.title).toBeUndefined();
-    const text = (opts.html as HTMLElement).textContent;
-    expect(text).toContain("<b>A</b>");
-    expect(text).toContain("9 of 15 messages needed");
-    expect(text).toContain("boom");
-    expect((opts.html as HTMLElement).querySelector("b")).toBeNull();
-    expect(opts.icon).toBe("warning");
-  });
-
-  it("showSummaryResults rows use only classes that index.css defines", async () => {
-    fire.mockResolvedValueOnce({});
-    await showSummaryResults([
-      { group_name: "A", group_jid: "1@g.us", status: "sent", reason: null, message_count: 1, required: 1 },
-      { group_name: "B", group_jid: "2@g.us", status: "failed", reason: "boom", message_count: null, required: null },
-    ]);
-    const root = fire.mock.calls[0][0].html as HTMLElement;
-    const classes = new Set([...root.querySelectorAll("[class]")].flatMap((e) => [...e.classList]));
-    expect([...classes].sort()).toEqual(
-      ["swal-result", "swal-result-badge", "swal-result-badge-failed", "swal-result-badge-sent", "swal-result-detail", "swal-result-failed", "swal-result-sent", "swal-results"].sort(),
-    );
-  });
-
-  it("showSummaryResults handles an empty list", async () => {
-    fire.mockResolvedValueOnce({});
-    await showSummaryResults([], "No managed groups");
-    expect((fire.mock.calls[0][0].html as HTMLElement).textContent).toContain("No managed groups");
-  });
-
-  it("picks the results icon by outcome mix", () => {
-    expect(summaryIcon({ sent: 3, skipped: 0, failed: 0 }, 3)).toBe("success");
-    expect(summaryIcon({ sent: 2, skipped: 0, failed: 1 }, 3)).toBe("warning");
-    expect(summaryIcon({ sent: 1, skipped: 2, failed: 0 }, 3)).toBe("warning");
-    expect(summaryIcon({ sent: 0, skipped: 0, failed: 3 }, 3)).toBe("error");
-    expect(summaryIcon({ sent: 0, skipped: 3, failed: 0 }, 3)).toBe("info");
-    expect(summaryIcon({ sent: 0, skipped: 0, failed: 0 }, 0)).toBe("warning");
   });
 });

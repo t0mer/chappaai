@@ -5,7 +5,7 @@
 - Application entrypoint: `app/main.py` (starts FastAPI, wiring DB, WhatsApp client).
 - Migrations: `migrations/` with `alembic.ini`.
 - Tests are colocated with code: `src/**/test_*.py` (e.g., `src/whatsapp/test_jid.py`).
-- Extras: `notebooks/`, `data/`.
+- Extras: `data/` (local data, gitignored).
 
 ## Build, Test, and Development Commands
 - Install deps: `uv sync --all-extras --active` (Python 3.13).
@@ -13,17 +13,17 @@
 - Type check: `pyright`.
 - Run tests: `pytest -q` or `pytest --cov=src --cov-report=xml`.
 - Run API locally: `uv run python app/main.py` (reads `.env` in repo root). Alt: `uvicorn app.main:app --reload`.
-- Docker stack: `docker compose up -d` (services: `postgres`, `whatsapp`, `web-server`).
+- Docker stack: `docker compose up -d` (services: `postgres`, `whatsapp`, `chappaai`).
 
 ## Coding Style & Naming Conventions
-- Python style: 4‑space indent, f-strings, type hints for public functions, absolute imports from `src` (e.g., `from handler.router import Router`).
+- Python style: 4‑space indent, f-strings, type hints for public functions, absolute imports from `src` (e.g., `from handler import MessageHandler`).
 - Naming: modules/functions `snake_case`; classes `CamelCase`; constants `UPPER_CASE`.
 - Keep functions small and async-friendly where I/O is involved.
 - Enforce with `ruff` (style/format) and `pyright` (types) before committing.
 
 ## Testing Guidelines
 - Frameworks: `pytest`, `pytest-asyncio`, `pytest-cov`.
-- Test files: `test_*.py` next to modules (e.g., `src/handler/test_router.py`).
+- Test files: `test_*.py` next to modules (e.g., `src/handler/test_message_handler.py`).
 - Use `AsyncMock`/fixtures (see `src/test_utils/`) and avoid real network/DB calls.
 - Coverage: `pytest --cov=src` (XML written to `coverage.xml`).
 

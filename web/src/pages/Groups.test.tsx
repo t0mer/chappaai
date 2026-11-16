@@ -17,9 +17,7 @@ import { confirm, toast } from "../alerts";
 
 const base: Group = {
   group_jid: "1@g.us", group_name: "WA name", display_name: null, group_topic: "topic",
-  owner_jid: "9725@s.whatsapp.net", managed: false, notify_on_spam: false, summary_language: null,
-  community_keys: [], last_summary_sync: "2026-01-02T03:04:05", last_ingest: "2026-01-02T03:04:05",
-  message_count: 12, schedule_count: 0,
+  owner_jid: "9725@s.whatsapp.net", managed: false, community_keys: [], message_count: 12,
 };
 
 function setup(groups: Group[]) {
@@ -41,31 +39,28 @@ describe("Groups page", () => {
     expect(screen.getByText(/WA name/)).toBeInTheDocument();
   });
 
-  it("asks for confirmation before enabling managed and shows last_summary_sync", async () => {
+  it("asks for confirmation before enabling managed", async () => {
     setup([base]);
-    await userEvent.click(await screen.findByRole("switch", { name: /respond.*1@g\.us/i }));
+    await userEvent.click(await screen.findByRole("switch", { name: /enabled.*1@g\.us/i }));
     expect(confirm).toHaveBeenCalledTimes(1);
     const opts = vi.mocked(confirm).mock.calls[0][0] as { title: string; text: string };
     expect(opts.title).toContain("WA name");
-    expect(opts.text).toContain(new Date(base.last_summary_sync).toLocaleString());
     await waitFor(() => expect(api.patchGroup).toHaveBeenCalledWith("1@g.us", { managed: true }));
   });
 
   it("does not enable managed when the confirmation is declined", async () => {
     vi.mocked(confirm).mockResolvedValue(false);
     setup([base]);
-    await userEvent.click(await screen.findByRole("switch", { name: /respond.*1@g\.us/i }));
+    await userEvent.click(await screen.findByRole("switch", { name: /enabled.*1@g\.us/i }));
     expect(api.patchGroup).not.toHaveBeenCalled();
-    expect(screen.getByRole("switch", { name: /respond.*1@g\.us/i })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: /enabled.*1@g\.us/i })).not.toBeChecked();
   });
 
-  it("disabling managed and toggling the spam notice do not ask for confirmation", async () => {
+  it("disabling managed does not ask for confirmation", async () => {
     setup([{ ...base, managed: true }]);
-    await userEvent.click(await screen.findByRole("switch", { name: /respond.*1@g\.us/i }));
-    await userEvent.click(screen.getByRole("switch", { name: /spam.*1@g\.us/i }));
+    await userEvent.click(await screen.findByRole("switch", { name: /enabled.*1@g\.us/i }));
     expect(confirm).not.toHaveBeenCalled();
     expect(api.patchGroup).toHaveBeenCalledWith("1@g.us", { managed: false });
-    expect(api.patchGroup).toHaveBeenCalledWith("1@g.us", { notify_on_spam: true });
   });
 
   it("edits display name and community keys and sends only those fields", async () => {
@@ -82,28 +77,28 @@ describe("Groups page", () => {
 
   it("toasts success after a save", async () => {
     setup([{ ...base, managed: true }]);
-    await userEvent.click(await screen.findByRole("switch", { name: /spam.*1@g\.us/i }));
+    await userEvent.click(await screen.findByRole("switch", { name: /enabled.*1@g\.us/i }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith(expect.stringContaining("WA name")));
   });
 
   it("toasts the error and keeps the old value when saving fails", async () => {
-    setup([base]);
+    setup([{ ...base, managed: true }]);
     vi.mocked(api.patchGroup).mockRejectedValueOnce(new Error("boom"));
-    await userEvent.click(await screen.findByRole("switch", { name: /spam.*1@g\.us/i }));
+    await userEvent.click(await screen.findByRole("switch", { name: /enabled.*1@g\.us/i }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("boom"));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: /spam.*1@g\.us/i })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: /enabled.*1@g\.us/i })).toBeChecked();
   });
 
   it("failed list save toasts, reloads, and reflects server state", async () => {
     setup([base]);
     vi.mocked(api.patchGroup).mockRejectedValueOnce(new Error("nope"));
-    const box = await screen.findByRole("switch", { name: /respond.*1@g\.us/i });
+    const box = await screen.findByRole("switch", { name: /enabled.*1@g\.us/i });
     const before = vi.mocked(api.listGroups).mock.calls.length;
     await userEvent.click(box);
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("nope"));
     await waitFor(() => expect(vi.mocked(api.listGroups).mock.calls.length).toBeGreaterThan(before));
-    expect(screen.getByRole("switch", { name: /respond.*1@g\.us/i })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: /enabled.*1@g\.us/i })).not.toBeChecked();
   });
 
   it("keeps the dialog open with edits and an inner alert on failure, closes on retry success", async () => {
@@ -291,71 +286,5 @@ describe("Groups page", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     await screen.findByText("No groups match.");
     await waitFor(() => expect(screen.getByRole("textbox", { name: "Search groups" })).toHaveFocus());
-  });
-
-  describe("summary language", () => {
-    const sel = () => screen.findByRole("combobox", { name: /summary language for wa name/i });
-
-    it("shows the current value and Auto for null", async () => {
-      setup([base, { ...base, group_jid: "2@g.us", group_name: "Other", summary_language: "ru" }]);
-      expect(await sel()).toHaveValue("");
-      expect(screen.getByRole("combobox", { name: /summary language for other/i })).toHaveValue("ru");
-      const opts = within(await sel()).getAllByRole("option").map((o) => o.textContent);
-      expect(opts).toEqual(["Auto", "HE", "EN", "RU"]);
-    });
-
-    it("sends only summary_language on change and toasts success", async () => {
-      setup([base]);
-      await userEvent.selectOptions(await sel(), "he");
-      await waitFor(() => expect(api.patchGroup).toHaveBeenCalledWith("1@g.us", { summary_language: "he" }));
-      await waitFor(() => expect(toast.success).toHaveBeenCalled());
-    });
-
-    it("sends null when switching back to Auto", async () => {
-      setup([{ ...base, summary_language: "en" }]);
-      await userEvent.selectOptions(await sel(), "");
-      await waitFor(() => expect(api.patchGroup).toHaveBeenCalledWith("1@g.us", { summary_language: null }));
-    });
-
-    it("is disabled while saving", async () => {
-      setup([base]);
-      let release!: () => void;
-      vi.mocked(api.patchGroup).mockReturnValueOnce(new Promise((r) => { release = () => r(base); }));
-      await userEvent.selectOptions(await sel(), "en");
-      expect(await sel()).toBeDisabled();
-      release();
-      await waitFor(() => expect(screen.getByRole("combobox", { name: /summary language for wa name/i })).toBeEnabled());
-    });
-
-    it("edit dialog shows the language and sends it only when changed", async () => {
-      setup([{ ...base, summary_language: "en" }]);
-      await userEvent.click(await screen.findByRole("button", { name: /edit 1@g\.us/i }));
-      const dialog = screen.getByRole("dialog");
-      const select = within(dialog).getByLabelText("Summary language");
-      expect(select).toHaveValue("en");
-      await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-      expect(api.patchGroup).not.toHaveBeenCalled();
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-      await userEvent.click(screen.getByRole("button", { name: /edit 1@g\.us/i }));
-      await userEvent.selectOptions(screen.getByLabelText("Summary language", { selector: "[role=dialog] select" }), "");
-      await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Save" }));
-      await waitFor(() => expect(api.patchGroup).toHaveBeenCalledWith("1@g.us", { summary_language: null }));
-    });
-
-    it("toasts the error and reverts the select on failure", async () => {
-      setup([base]);
-      vi.mocked(api.patchGroup).mockRejectedValueOnce(new Error("boom"));
-      await userEvent.selectOptions(await sel(), "ru");
-      await waitFor(() => expect(toast.error).toHaveBeenCalledWith("boom"));
-      await waitFor(() => expect(screen.getByRole("combobox", { name: /summary language for wa name/i })).toHaveValue(""));
-    });
-  });
-
-  it("shows the schedule count and a Schedules button naming the group", async () => {
-    setup([{ ...base, display_name: "My alias", schedule_count: 3 }]);
-    expect(await screen.findByRole("columnheader", { name: "Schedules" })).toBeInTheDocument();
-    const row = screen.getByRole("row", { name: /My alias/ });
-    expect(row).toHaveTextContent("3");
-    expect(within(row).getByRole("button", { name: "Schedules 3 for My alias" })).toHaveTextContent("Schedules");
   });
 });

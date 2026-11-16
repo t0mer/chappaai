@@ -1,11 +1,9 @@
 from .group import Group, BaseGroup
-from .knowledge_base_topic import KBTopic, KBTopicCreate
 from .message import Message, BaseMessage
 from .sender import Sender, BaseSender
 from .reaction import Reaction, BaseReaction
 from .upsert import upsert, bulk_upsert
 from .opt_out import OptOut
-from .group_summary_schedule import GroupSummarySchedule
 from .openwa import OpenWAConnection, OpenWASession
 
 __all__ = [
@@ -19,10 +17,7 @@ __all__ = [
     "BaseReaction",
     "upsert",
     "bulk_upsert",
-    "KBTopic",
-    "KBTopicCreate",
     "OptOut",
-    "GroupSummarySchedule",
     "OpenWAConnection",
     "OpenWASession",
 ]

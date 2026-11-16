@@ -18,7 +18,7 @@ from api.deps import (
     get_optional_whatsapp,
 )
 from config import Settings, get_settings
-from models import Group, KBTopic, Message, Reaction, Sender
+from models import Group, Message, Reaction, Sender
 from whatsapp import WhatsAppGateway
 from whatsapp.identity import get_bot_identity
 
@@ -215,16 +215,6 @@ async def get_stats(
         .join(Message, col(Message.message_id) == col(Reaction.message_id))
         .where(*reaction_where)
     )
-    kb_topics = await session.scalar(
-        select(func.count())
-        .select_from(KBTopic)
-        .join(Group, col(Group.group_jid) == col(KBTopic.group_jid))
-        .where(
-            group_in_session,
-            col(KBTopic.start_time) >= start,
-            col(KBTopic.start_time) <= end,
-        )
-    )
     groups_total, groups_managed = (
         await session.execute(
             select(func.count(), func.count().filter(col(Group.managed))).where(
@@ -244,7 +234,6 @@ async def get_stats(
         messages=messages,
         active_senders=senders,
         reactions=int(reactions or 0),
-        kb_topics=int(kb_topics or 0),
         split=StatsSplit(text=text, media=media, other=messages - text - media),
         series=series,
         top_groups=[

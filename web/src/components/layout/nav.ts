@@ -1,4 +1,4 @@
-import { BellOff, Contact, LayoutDashboard, MessageSquare, Settings, Users, Zap, type LucideIcon } from "lucide-react";
+import { BellOff, Contact, LayoutDashboard, MessageSquare, Settings, Users, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   to: string;
@@ -15,7 +15,6 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, primary: true, end: true },
   { to: "/groups", label: "Groups", icon: Users, primary: true },
   { to: "/messages", label: "Messages", icon: MessageSquare, primary: true },
-  { to: "/actions", label: "Bot actions", icon: Zap, primary: true },
   { to: "/contacts", label: "Contacts", icon: Contact },
   { to: "/opt-outs", label: "Opt-outs", icon: BellOff },
   { to: "/settings", label: "Settings", icon: Settings },

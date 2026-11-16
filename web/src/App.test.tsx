@@ -10,7 +10,7 @@ import App from "./App";
 const EMPTY_STATS = {
   from: "2026-10-03T00:00:00Z", to: "2026-10-10T00:00:00Z", timezone: "Asia/Jerusalem", bucket: "day",
   bot_excluded: true, groups: { total: 0, managed: 0 }, chats: 0, messages: 0, active_senders: 0,
-  reactions: 0, kb_topics: 0, split: { text: 0, media: 0, other: 0 }, series: [], top_groups: [],
+  reactions: 0, split: { text: 0, media: 0, other: 0 }, series: [], top_groups: [],
   top_senders: [], by_hour: Array(24).fill(0), by_weekday: Array(7).fill(0),
 };
 
